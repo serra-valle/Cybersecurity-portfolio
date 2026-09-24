@@ -1,6 +1,8 @@
-name: Aegis Terraform Guardrail
+name: Aegis Security Guardrail
 
 on:
+  workflow_dispatch:
+
   pull_request:
     paths:
       - "IAM-Least-Privilege-Automation/phase5-7-policy-hardening/**"
@@ -13,10 +15,18 @@ on:
       - "IAM-Least-Privilege-Automation/phase5-7-policy-hardening/**"
       - ".github/workflows/aegis-guardrail.yml"
 
+permissions:
+  contents: read
+
 jobs:
   policy-check:
-    name: Terraform Security Policy Check
+    name: Policy-as-Code Regression
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout repository
@@ -26,61 +36,497 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.6.3"
+          terraform_wrapper: false
 
-      - name: Setup positive Terraform fixture
-        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/tf-test
+      - name: Install OPA 0.62.1
         run: |
-          terraform init -input=false
-          terraform plan -input=false -out=tfplan.binary
-          terraform show -json tfplan.binary > tfplan.json
+          set -euo pipefail
 
-      - name: Setup negative Terraform fixture
-        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/negative-test
-        run: |
-          terraform init -input=false
-          terraform plan -input=false -out=tfplan.binary
-          terraform show -json tfplan.binary > tfplan.json
+          curl -fsSL \
+            https://openpolicyagent.org/downloads/v0.62.1/opa_linux_amd64_static \
+            -o opa
 
-      - name: Install Conftest
+          chmod +x opa
+          sudo mv opa /usr/local/bin/opa
+
+          opa version
+
+      - name: Install Conftest 0.50.0
         run: |
-          curl -L \
+          set -euo pipefail
+
+          curl -fsSL \
             https://github.com/open-policy-agent/conftest/releases/download/v0.50.0/conftest_0.50.0_Linux_x86_64.tar.gz \
             -o conftest.tar.gz
 
           tar -xzf conftest.tar.gz
           sudo mv conftest /usr/local/bin/conftest
 
-      - name: Verify Aegis policy tests
-        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
-        run: |
-          conftest verify --policy .
+          conftest --version
 
-      - name: Positive Terraform regression test
-        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
-        run: |
-          conftest test --policy . tf-test/tfplan.json
+      # ------------------------------------------------------------
+      # Phase 1 Terraform regression fixtures
+      # ------------------------------------------------------------
 
-      - name: Negative Terraform regression test
-        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
-        shell: bash
+      - name: Generate Phase 1 positive Terraform plan
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/tf-test
         run: |
+          set -euo pipefail
+
+          terraform init -input=false
+          terraform plan \
+            -input=false \
+            -refresh=false \
+            -out=tfplan.binary
+
+          terraform show -json tfplan.binary > tfplan.json
+
+      - name: Generate Phase 1 negative Terraform plan
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/negative-test
+        run: |
+          set -euo pipefail
+
+          terraform init -input=false
+          terraform plan \
+            -input=false \
+            -refresh=false \
+            -out=tfplan.binary
+
+          terraform show -json tfplan.binary > tfplan.json
+
+      # ------------------------------------------------------------
+      # Phase 2 AWS Terraform fixtures
+      #
+      # These fixtures are deliberately credential-independent.
+      # No terraform apply is executed.
+      # ------------------------------------------------------------
+
+      - name: Generate Phase 2 AWS IAM plans
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          for fixture in \
+            phase2-advanced/fixtures/iam/positive \
+            phase2-advanced/fixtures/iam/negative
+          do
+            echo "Generating Terraform plan: $fixture"
+
+            terraform -chdir="$fixture" init \
+              -backend=false \
+              -input=false \
+              -lockfile=readonly
+
+            terraform -chdir="$fixture" validate
+
+            terraform -chdir="$fixture" plan \
+              -input=false \
+              -refresh=false \
+              -out=tfplan.binary
+
+            terraform -chdir="$fixture" show \
+              -json tfplan.binary > "$fixture/tfplan.json"
+          done
+
+      - name: Generate Phase 2 AWS storage plans
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          for fixture in \
+            phase2-advanced/fixtures/aws-storage/positive \
+            phase2-advanced/fixtures/aws-storage/negative
+          do
+            echo "Generating Terraform plan: $fixture"
+
+            terraform -chdir="$fixture" init \
+              -backend=false \
+              -input=false \
+              -lockfile=readonly
+
+            terraform -chdir="$fixture" validate
+
+            terraform -chdir="$fixture" plan \
+              -input=false \
+              -refresh=false \
+              -out=tfplan.binary
+
+            terraform -chdir="$fixture" show \
+              -json tfplan.binary > "$fixture/tfplan.json"
+          done
+
+      # ------------------------------------------------------------
+      # Azure fixture syntax/schema validation
+      #
+      # Real Azure plan validation was performed separately against
+      # an authenticated Azure subscription. CI intentionally does
+      # not require Azure credentials.
+      # ------------------------------------------------------------
+
+      - name: Validate Azure Terraform fixtures
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          for fixture in \
+            phase2-advanced/fixtures/azure-storage/positive \
+            phase2-advanced/fixtures/azure-storage/negative
+          do
+            echo "Validating Terraform fixture: $fixture"
+
+            terraform -chdir="$fixture" init \
+              -backend=false \
+              -input=false \
+              -lockfile=readonly
+
+            terraform -chdir="$fixture" validate
+          done
+
+      # ------------------------------------------------------------
+      # Rego compilation + unit/regression tests
+      # ------------------------------------------------------------
+
+      - name: Validate Phase 2 Rego
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          opa check \
+            phase2-advanced/policy \
+            phase2-advanced/tests
+
+      - name: Run complete Aegis policy regression
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          output=$(conftest verify --policy . 2>&1)
+          echo "$output"
+
+          if ! echo "$output" | grep -q "49 tests, 49 passed"; then
+            echo "ERROR: expected complete 49/49 Aegis regression baseline."
+            exit 1
+          fi
+
+      # ------------------------------------------------------------
+      # Phase 1 integration regression
+      # ------------------------------------------------------------
+
+      - name: Phase 1 positive Terraform regression
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          conftest test \
+            --policy . \
+            tf-test/tfplan.json
+
+      - name: Phase 1 negative Terraform regression
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
           set +e
-
-          output=$(conftest test --policy . negative-test/tfplan.json 2>&1)
+          output=$(conftest test \
+            --policy . \
+            negative-test/tfplan.json 2>&1)
           rc=$?
+          set -e
 
           echo "$output"
 
           if [ "$rc" -ne 1 ]; then
-            echo "ERROR: insecure Terraform fixture did not produce the expected DENY."
+            echo "ERROR: insecure Phase 1 Terraform fixture was not denied."
             echo "Expected exit code: 1"
             echo "Actual exit code: $rc"
             exit 1
           fi
 
           if ! echo "$output" | grep -q "DENY:"; then
-            echo "ERROR: Conftest exited with code 1, but no DENY result was produced."
+            echo "ERROR: Phase 1 negative fixture returned code 1 without a DENY result."
             exit 1
           fi
 
-          echo "Negative regression test correctly denied the insecure configuration."
+          echo "Phase 1 negative regression correctly denied."
+
+      # ------------------------------------------------------------
+      # Phase 2 AWS integration tests
+      # ------------------------------------------------------------
+
+      - name: Phase 2 IAM positive plan
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          conftest test \
+            phase2-advanced/fixtures/iam/positive/tfplan.json \
+            --policy phase2-advanced/policy
+
+      - name: Phase 2 IAM negative plan
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          set +e
+          output=$(conftest test \
+            phase2-advanced/fixtures/iam/negative/tfplan.json \
+            --policy phase2-advanced/policy 2>&1)
+          rc=$?
+          set -e
+
+          echo "$output"
+
+          if [ "$rc" -ne 1 ]; then
+            echo "ERROR: wildcard IAM policy was not denied."
+            exit 1
+          fi
+
+          if ! echo "$output" | grep -q \
+            "grants wildcard Action '\\*' on wildcard Resource '\\*'"; then
+            echo "ERROR: expected IAM wildcard denial was not found."
+            exit 1
+          fi
+
+          echo "IAM wildcard policy correctly denied."
+
+      - name: Phase 2 AWS storage positive plan
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          conftest test \
+            phase2-advanced/fixtures/aws-storage/positive/tfplan.json \
+            --policy phase2-advanced/policy
+
+      - name: Phase 2 AWS storage negative plan
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          set +e
+          output=$(conftest test \
+            phase2-advanced/fixtures/aws-storage/negative/tfplan.json \
+            --policy phase2-advanced/policy 2>&1)
+          rc=$?
+          set -e
+
+          echo "$output"
+
+          if [ "$rc" -ne 1 ]; then
+            echo "ERROR: insecure AWS storage plan was not denied."
+            exit 1
+          fi
+
+          for expected in \
+            "does not have an explicit server-side encryption configuration" \
+            "does not have all required Public Access Block protections enabled" \
+            "EBS volume 'insecure' is not explicitly encrypted" \
+            "RDS instance 'insecure' does not have storage encryption enabled"
+          do
+            if ! echo "$output" | grep -Fq "$expected"; then
+              echo "ERROR: missing expected AWS storage denial:"
+              echo "$expected"
+              exit 1
+            fi
+          done
+
+          echo "AWS storage negative plan correctly denied."
+
+  kubernetes-admission:
+    name: Kubernetes Gatekeeper Admission
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs:
+      - policy-check
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify Docker
+        run: |
+          set -euo pipefail
+
+          docker --version
+          docker info >/dev/null
+
+      - name: Install kubectl 1.33.4
+        run: |
+          set -euo pipefail
+
+          curl -fsSLO \
+            https://dl.k8s.io/release/v1.33.4/bin/linux/amd64/kubectl
+
+          curl -fsSLO \
+            https://dl.k8s.io/release/v1.33.4/bin/linux/amd64/kubectl.sha256
+
+          echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+
+          kubectl version --client
+
+      - name: Install Kind 0.33.0
+        run: |
+          set -euo pipefail
+
+          curl -fsSL \
+            https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64 \
+            -o kind
+
+          chmod +x kind
+          sudo mv kind /usr/local/bin/kind
+
+          kind version
+
+      - name: Create disposable Aegis Kubernetes cluster
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          kind create cluster \
+            --name aegis-policy-lab \
+            --config phase2-advanced/kubernetes/kind/cluster.yaml \
+            --image kindest/node:v1.33.12@sha256:3f5c8443c620245e4d355cfe09e96a91ead32ceaa569d3f1ca9edf0cb2fe2ff4 \
+            --wait 5m
+
+          kubectl get nodes -o wide
+
+      - name: Install OPA Gatekeeper 3.23.1
+        run: |
+          set -euo pipefail
+
+          kubectl apply -f \
+            https://raw.githubusercontent.com/open-policy-agent/gatekeeper/v3.23.1/deploy/gatekeeper.yaml
+
+          kubectl wait \
+            --for=condition=Available \
+            deployment/gatekeeper-controller-manager \
+            -n gatekeeper-system \
+            --timeout=180s
+
+          kubectl wait \
+            --for=condition=Available \
+            deployment/gatekeeper-audit \
+            -n gatekeeper-system \
+            --timeout=180s
+
+          kubectl get pods -n gatekeeper-system
+
+      - name: Install Aegis Gatekeeper policies
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          kubectl apply \
+            -f phase2-advanced/kubernetes/manifests/namespace.yaml
+
+          kubectl apply \
+            -f phase2-advanced/kubernetes/gatekeeper/container-security-template.yaml \
+            -f phase2-advanced/kubernetes/gatekeeper/image-integrity-template.yaml
+
+          kubectl wait \
+            --for=condition=Established \
+            crd/k8saegiscontainersecurity.constraints.gatekeeper.sh \
+            --timeout=120s
+
+          kubectl wait \
+            --for=condition=Established \
+            crd/k8saegisimageintegrity.constraints.gatekeeper.sh \
+            --timeout=120s
+
+          kubectl apply \
+            -f phase2-advanced/kubernetes/gatekeeper/container-security-constraint.yaml \
+            -f phase2-advanced/kubernetes/gatekeeper/image-integrity-constraint.yaml
+
+          sleep 5
+
+          kubectl get constrainttemplates
+          kubectl get k8saegiscontainersecurity
+          kubectl get k8saegisimageintegrity
+
+      - name: Secure Pod admission must pass
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          kubectl apply \
+            --dry-run=server \
+            -f phase2-advanced/kubernetes/manifests/secure-pod.yaml
+
+      - name: Insecure Pod admissions must be denied
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+
+          expect_deny() {
+            local manifest="$1"
+            local expected="$2"
+
+            set +e
+            output=$(kubectl apply -f "$manifest" 2>&1)
+            rc=$?
+            set -e
+
+            echo
+            echo "============================================================"
+            echo "MANIFEST: $manifest"
+            echo "============================================================"
+            echo "$output"
+
+            if [ "$rc" -eq 0 ]; then
+              echo "ERROR: insecure Kubernetes manifest was admitted."
+              exit 1
+            fi
+
+            if ! echo "$output" | grep -Fq "$expected"; then
+              echo "ERROR: expected Gatekeeper denial was not found:"
+              echo "$expected"
+              exit 1
+            fi
+
+            echo "Correctly denied: $manifest"
+          }
+
+          expect_deny \
+            phase2-advanced/kubernetes/manifests/insecure-security-context.yaml \
+            "aegis-container-security"
+
+          expect_deny \
+            phase2-advanced/kubernetes/manifests/insecure-latest-image.yaml \
+            "uses prohibited :latest image"
+
+          expect_deny \
+            phase2-advanced/kubernetes/manifests/insecure-no-digest.yaml \
+            "must use an image pinned with an explicit sha256 digest"
+
+          expect_deny \
+            phase2-advanced/kubernetes/manifests/insecure-multicontainer.yaml \
+            "hidden-insecure-container"
+
+      - name: Gatekeeper diagnostics
+        if: failure()
+        run: |
+          echo "=== NODES ==="
+          kubectl get nodes -o wide || true
+
+          echo
+          echo "=== GATEKEEPER PODS ==="
+          kubectl get pods -n gatekeeper-system -o wide || true
+
+          echo
+          echo "=== CONSTRAINT TEMPLATES ==="
+          kubectl get constrainttemplates || true
+
+          echo
+          echo "=== CONTAINER SECURITY CONSTRAINT ==="
+          kubectl get k8saegiscontainersecurity -o yaml || true
+
+          echo
+          echo "=== IMAGE INTEGRITY CONSTRAINT ==="
+          kubectl get k8saegisimageintegrity -o yaml || true
