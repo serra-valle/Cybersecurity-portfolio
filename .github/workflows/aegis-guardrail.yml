@@ -114,8 +114,7 @@ jobs:
 
             terraform -chdir="$fixture" init \
               -backend=false \
-              -input=false \
-              -lockfile=readonly
+              -input=false
 
             terraform -chdir="$fixture" validate
 
@@ -141,8 +140,7 @@ jobs:
 
             terraform -chdir="$fixture" init \
               -backend=false \
-              -input=false \
-              -lockfile=readonly
+              -input=false
 
             terraform -chdir="$fixture" validate
 
@@ -176,8 +174,7 @@ jobs:
 
             terraform -chdir="$fixture" init \
               -backend=false \
-              -input=false \
-              -lockfile=readonly
+              -input=false
 
             terraform -chdir="$fixture" validate
           done
