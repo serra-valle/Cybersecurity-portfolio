@@ -1,0 +1,7 @@
+[31mFAIL[0m - phase2-advanced/fixtures/aws-storage/negative/tfplan.json - main - DENY: EBS volume 'insecure' is not explicitly encrypted.
+[31mFAIL[0m - phase2-advanced/fixtures/aws-storage/negative/tfplan.json - main - DENY: RDS instance 'insecure' does not have storage encryption enabled.
+[31mFAIL[0m - phase2-advanced/fixtures/aws-storage/negative/tfplan.json - main - DENY: S3 bucket 'insecure' does not have all required Public Access Block protections enabled.
+[31mFAIL[0m - phase2-advanced/fixtures/aws-storage/negative/tfplan.json - main - DENY: S3 bucket 'insecure' does not have an explicit server-side encryption configuration.
+
+[31m4 tests, 0 passed, 0 warnings, 4 failures, 0 exceptions[0m
+negative_storage_rc=

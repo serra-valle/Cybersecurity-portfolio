@@ -1,0 +1,8 @@
+phase2-advanced/tests/aws_storage_test.rego:
+data.aegis.aws.storage.test_secure_storage_passes: PASS (4.623372ms)
+data.aegis.aws.storage.test_insecure_storage_returns_four_denials: PASS (2.264435ms)
+data.aegis.aws.storage.test_missing_s3_public_access_block_is_denied: PASS (1.254575ms)
+data.aegis.aws.storage.test_partial_s3_public_access_block_is_denied: PASS (5.238388ms)
+data.aegis.aws.storage.test_missing_s3_encryption_is_denied: PASS (2.104639ms)
+--------------------------------------------------------------------------------
+PASS: 5/5
