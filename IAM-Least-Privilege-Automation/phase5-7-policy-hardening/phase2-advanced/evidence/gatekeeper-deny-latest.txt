@@ -1,0 +1,2 @@
+Error from server (Forbidden): error when creating "phase2-advanced/kubernetes/manifests/insecure-latest-image.yaml": admission webhook "validation.gatekeeper.sh" denied the request: [aegis-image-integrity] container <latest-container> uses prohibited :latest image <nginx:latest>
+latest_image_rc=

@@ -1,0 +1,71 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8saegiscontainersecurity
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sAegisContainerSecurity
+      validation:
+        openAPIV3Schema:
+          type: object
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            rego: |
+              package k8saegiscontainersecurity
+
+              all_containers contains {"container_type": "container", "container": c} if {
+                c := input.review.object.spec.containers[_]
+              }
+
+              all_containers contains {"container_type": "initContainer", "container": c} if {
+                containers := object.get(input.review.object.spec, "initContainers", [])
+                c := containers[_]
+              }
+
+              all_containers contains {"container_type": "ephemeralContainer", "container": c} if {
+                containers := object.get(input.review.object.spec, "ephemeralContainers", [])
+                c := containers[_]
+              }
+
+              violation contains {"msg": msg} if {
+                item := all_containers[_]
+                security_context := object.get(item.container, "securityContext", {})
+
+                object.get(security_context, "runAsNonRoot", false) != true
+
+                msg := sprintf(
+                  "%s <%s> must set securityContext.runAsNonRoot=true",
+                  [item.container_type, item.container.name]
+                )
+              }
+
+              violation contains {"msg": msg} if {
+                item := all_containers[_]
+                security_context := object.get(item.container, "securityContext", {})
+
+                object.get(security_context, "readOnlyRootFilesystem", false) != true
+
+                msg := sprintf(
+                  "%s <%s> must set securityContext.readOnlyRootFilesystem=true",
+                  [item.container_type, item.container.name]
+                )
+              }
+
+              violation contains {"msg": msg} if {
+                item := all_containers[_]
+                security_context := object.get(item.container, "securityContext", {})
+
+                object.get(security_context, "allowPrivilegeEscalation", true) != false
+
+                msg := sprintf(
+                  "%s <%s> must set securityContext.allowPrivilegeEscalation=false",
+                  [item.container_type, item.container.name]
+                )
+              }

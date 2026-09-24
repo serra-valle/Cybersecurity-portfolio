@@ -1,0 +1,2 @@
+Error from server (Forbidden): error when creating "phase2-advanced/kubernetes/manifests/insecure-no-digest.yaml": admission webhook "validation.gatekeeper.sh" denied the request: [aegis-image-integrity] container <tagged-container> must use an image pinned with an explicit sha256 digest; found <nginx:1.27>
+no_digest_rc=

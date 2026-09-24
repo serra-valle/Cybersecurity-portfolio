@@ -1,0 +1,74 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8saegisimageintegrity
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sAegisImageIntegrity
+      validation:
+        openAPIV3Schema:
+          type: object
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            rego: |
+              package k8saegisimageintegrity
+
+              all_containers contains {"container_type": "container", "container": c} if {
+                c := input.review.object.spec.containers[_]
+              }
+
+              all_containers contains {"container_type": "initContainer", "container": c} if {
+                containers := object.get(input.review.object.spec, "initContainers", [])
+                c := containers[_]
+              }
+
+              all_containers contains {"container_type": "ephemeralContainer", "container": c} if {
+                containers := object.get(input.review.object.spec, "ephemeralContainers", [])
+                c := containers[_]
+              }
+
+              is_latest(image) if {
+                regex.match(
+                  "(^|.*/)[^@]*:latest(@sha256:[0-9a-fA-F]{64})?$",
+                  image
+                )
+              }
+
+              has_sha256_digest(image) if {
+                regex.match(
+                  "@sha256:[0-9a-fA-F]{64}$",
+                  image
+                )
+              }
+
+              violation contains {"msg": msg} if {
+                item := all_containers[_]
+                image := item.container.image
+
+                is_latest(image)
+
+                msg := sprintf(
+                  "%s <%s> uses prohibited :latest image <%s>",
+                  [item.container_type, item.container.name, image]
+                )
+              }
+
+              violation contains {"msg": msg} if {
+                item := all_containers[_]
+                image := item.container.image
+
+                not is_latest(image)
+                not has_sha256_digest(image)
+
+                msg := sprintf(
+                  "%s <%s> must use an image pinned with an explicit sha256 digest; found <%s>",
+                  [item.container_type, item.container.name, image]
+                )
+              }

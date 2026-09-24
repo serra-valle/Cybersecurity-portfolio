@@ -1,0 +1,23 @@
+=== Kubernetes Nodes ===
+NAME                             STATUS   ROLES           AGE   VERSION
+aegis-policy-lab-control-plane   Ready    control-plane   27m   v1.33.12
+
+=== Gatekeeper Pods ===
+NAME                                             READY   STATUS    RESTARTS      AGE
+gatekeeper-audit-6f8f785f7b-szgzm                1/1     Running   1 (21m ago)   24m
+gatekeeper-controller-manager-588565dcc7-fgcx8   1/1     Running   0             24m
+gatekeeper-controller-manager-588565dcc7-hfm8s   1/1     Running   0             24m
+gatekeeper-controller-manager-588565dcc7-tv7t8   1/1     Running   0             24m
+
+=== ConstraintTemplates ===
+NAME                        AGE
+k8saegiscontainersecurity   4m46s
+k8saegisimageintegrity      4m46s
+
+=== Container Security Constraint ===
+NAME                       ENFORCEMENT-ACTION   TOTAL-VIOLATIONS
+aegis-container-security   deny                 0
+
+=== Image Integrity Constraint ===
+NAME                    ENFORCEMENT-ACTION   TOTAL-VIOLATIONS
+aegis-image-integrity   deny                 0

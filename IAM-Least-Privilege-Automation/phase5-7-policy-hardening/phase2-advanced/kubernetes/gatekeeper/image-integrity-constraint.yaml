@@ -1,0 +1,14 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sAegisImageIntegrity
+metadata:
+  name: aegis-image-integrity
+spec:
+  enforcementAction: deny
+
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+
+    namespaces:
+      - aegis-policy-test

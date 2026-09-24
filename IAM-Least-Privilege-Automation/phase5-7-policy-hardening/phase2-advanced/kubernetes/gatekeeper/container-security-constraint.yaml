@@ -1,0 +1,14 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sAegisContainerSecurity
+metadata:
+  name: aegis-container-security
+spec:
+  enforcementAction: deny
+
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+
+    namespaces:
+      - aegis-policy-test

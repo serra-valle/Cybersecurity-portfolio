@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: aegis-secure-pod
+  namespace: aegis-policy-test
+
+spec:
+  restartPolicy: Never
+
+  containers:
+    - name: secure-container
+      image: mcr.microsoft.com/oss/v2/kubernetes/pause@sha256:1a5786ee0e19956a36d3bc8ae3dce4e7203e1a07e4e6495d6b4c5d465203ec5a
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+
+        capabilities:
+          drop:
+            - ALL

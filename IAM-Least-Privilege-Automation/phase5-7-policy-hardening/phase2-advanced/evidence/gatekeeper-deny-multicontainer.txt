@@ -1,0 +1,5 @@
+Error from server (Forbidden): error when creating "phase2-advanced/kubernetes/manifests/insecure-multicontainer.yaml": admission webhook "validation.gatekeeper.sh" denied the request: [aegis-container-security] container <hidden-insecure-container> must set securityContext.allowPrivilegeEscalation=false
+[aegis-container-security] container <hidden-insecure-container> must set securityContext.readOnlyRootFilesystem=true
+[aegis-container-security] container <hidden-insecure-container> must set securityContext.runAsNonRoot=true
+[aegis-image-integrity] container <hidden-insecure-container> uses prohibited :latest image <nginx:latest>
+multicontainer_rc=
