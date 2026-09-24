@@ -1,0 +1,6 @@
+[31mFAIL[0m - phase2-advanced/fixtures/azure-storage/negative/tfplan.json - main - DENY: Azure Storage account 'insecure' allows nested items to be configured for public access.
+[31mFAIL[0m - phase2-advanced/fixtures/azure-storage/negative/tfplan.json - main - DENY: Azure Storage account 'insecure' does not have infrastructure encryption enabled.
+[31mFAIL[0m - phase2-advanced/fixtures/azure-storage/negative/tfplan.json - main - DENY: Azure Storage container 'insecure' permits public blob or container access.
+
+[31m3 tests, 0 passed, 0 warnings, 3 failures, 0 exceptions[0m
+negative_azure_storage_rc=

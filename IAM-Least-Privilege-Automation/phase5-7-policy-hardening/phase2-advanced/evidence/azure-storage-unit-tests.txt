@@ -1,0 +1,8 @@
+phase2-advanced/tests/azure_storage_test.rego:
+data.aegis.azure.storage.test_secure_azure_storage_passes: PASS (30.476013ms)
+data.aegis.azure.storage.test_insecure_azure_storage_returns_three_denials: PASS (733.114µs)
+data.aegis.azure.storage.test_public_nested_items_are_denied: PASS (426.636µs)
+data.aegis.azure.storage.test_missing_infrastructure_encryption_is_denied: PASS (1.212956ms)
+data.aegis.azure.storage.test_public_blob_container_is_denied: PASS (357.683µs)
+--------------------------------------------------------------------------------
+PASS: 5/5
