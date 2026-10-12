@@ -1,0 +1,2 @@
+Error from server (Forbidden): error when creating "/tmp/pss-negative-privileged.yaml": pods "pss-negative-privileged" is forbidden: violates PodSecurity "restricted:v1.33": privileged (container "test" must not set securityContext.privileged=true), allowPrivilegeEscalation != false (container "test" must set securityContext.allowPrivilegeEscalation=false)
+PASS: rejected by native Pod Security Admission.

@@ -1,0 +1,2 @@
+Error from server (Forbidden): error when creating "/tmp/pss-negative-ape.yaml": pods "pss-negative-ape" is forbidden: violates PodSecurity "restricted:v1.33": allowPrivilegeEscalation != false (container "test" must set securityContext.allowPrivilegeEscalation=false)
+PASS: rejected by native Pod Security Admission.

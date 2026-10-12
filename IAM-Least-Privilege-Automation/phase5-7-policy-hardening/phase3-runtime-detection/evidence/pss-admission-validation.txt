@@ -1,0 +1,33 @@
+AEGIS PHASE 3 - PSS VALIDATION
+2026-10-12T10:19:39-04:00
+Policy: Pod Security Standards restricted:v1.33
+Namespace: aegis-pss-test
+
+pod/pss-compliant-admission-1791813568 created (server dry run)
+PASS: compliant Pod accepted by server-side admission.
+pod/pss-compliant-admission-1791813568 created
+pod/pss-compliant-admission-1791813568 condition met
+PASS: compliant Pod reached Ready state.
+
+----- ape -----
+Error from server (Forbidden): error when creating "/tmp/pss-negative-ape.yaml": pods "pss-negative-ape" is forbidden: violates PodSecurity "restricted:v1.33": allowPrivilegeEscalation != false (container "test" must set securityContext.allowPrivilegeEscalation=false)
+PASS: rejected by native Pod Security Admission.
+
+----- privileged -----
+Error from server (Forbidden): error when creating "/tmp/pss-negative-privileged.yaml": pods "pss-negative-privileged" is forbidden: violates PodSecurity "restricted:v1.33": privileged (container "test" must not set securityContext.privileged=true), allowPrivilegeEscalation != false (container "test" must set securityContext.allowPrivilegeEscalation=false)
+PASS: rejected by native Pod Security Admission.
+
+----- nonroot -----
+Error from server (Forbidden): error when creating "/tmp/pss-negative-nonroot.yaml": pods "pss-negative-nonroot" is forbidden: violates PodSecurity "restricted:v1.33": runAsNonRoot != true (pod must not set securityContext.runAsNonRoot=false)
+PASS: rejected by native Pod Security Admission.
+
+----- seccomp -----
+Error from server (Forbidden): error when creating "/tmp/pss-negative-seccomp.yaml": pods "pss-negative-seccomp" is forbidden: violates PodSecurity "restricted:v1.33": seccompProfile (pod or container "test" must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
+PASS: rejected by native Pod Security Admission.
+
+----- capabilities -----
+Error from server (Forbidden): error when creating "/tmp/pss-negative-capabilities.yaml": pods "pss-negative-capabilities" is forbidden: violates PodSecurity "restricted:v1.33": unrestricted capabilities (container "test" must set securityContext.capabilities.drop=["ALL"])
+PASS: rejected by native Pod Security Admission.
+
+PSS PASS COUNT: 7
+PSS FAIL/INCONCLUSIVE COUNT: 0

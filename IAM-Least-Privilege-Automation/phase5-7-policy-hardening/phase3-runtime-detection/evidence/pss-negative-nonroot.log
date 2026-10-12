@@ -1,0 +1,2 @@
+Error from server (Forbidden): error when creating "/tmp/pss-negative-nonroot.yaml": pods "pss-negative-nonroot" is forbidden: violates PodSecurity "restricted:v1.33": runAsNonRoot != true (pod must not set securityContext.runAsNonRoot=false)
+PASS: rejected by native Pod Security Admission.

@@ -1,0 +1,5 @@
+2026-10-12T10:19:43-04:00
+namespace "aegis-pss-test" deleted
+PASS: temporary PSS namespace deleted.
+PASS: PSS namespace is absent.
+PASS: Falco test Pod is absent.

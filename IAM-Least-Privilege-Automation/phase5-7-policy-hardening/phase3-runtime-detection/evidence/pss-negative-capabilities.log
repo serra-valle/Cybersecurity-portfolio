@@ -1,0 +1,2 @@
+Error from server (Forbidden): error when creating "/tmp/pss-negative-capabilities.yaml": pods "pss-negative-capabilities" is forbidden: violates PodSecurity "restricted:v1.33": unrestricted capabilities (container "test" must set securityContext.capabilities.drop=["ALL"])
+PASS: rejected by native Pod Security Admission.

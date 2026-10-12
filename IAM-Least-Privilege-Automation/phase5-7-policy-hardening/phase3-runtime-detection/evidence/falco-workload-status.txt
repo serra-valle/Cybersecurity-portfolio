@@ -1,0 +1,5 @@
+2026-10-12T10:19:42-04:00
+NAME    DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE   CONTAINERS                       IMAGES                                                                         SELECTOR
+falco   1         1         1       1            1           <none>          73m   falco,falcoctl-artifact-follow   docker.io/falcosecurity/falco:0.45.0,docker.io/falcosecurity/falcoctl:0.14.2   app.kubernetes.io/instance=falco,app.kubernetes.io/name=falco
+NAME          READY   STATUS    RESTARTS   AGE   IP            NODE                             NOMINATED NODE   READINESS GATES
+falco-2txbb   2/2     Running   0          60m   10.244.0.11   aegis-policy-lab-control-plane   <none>           <none>

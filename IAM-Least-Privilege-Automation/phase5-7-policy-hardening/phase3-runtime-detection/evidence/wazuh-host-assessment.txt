@@ -1,0 +1,12 @@
+AEGIS PHASE 3 - SIEM HOST FEASIBILITY
+
+Architecture: aarch64
+CPU cores: 4
+RAM: 3.8 GiB total
+Root filesystem: 30 GiB total, 10 GiB available
+Docker: not installed
+Docker Compose: unavailable because Docker is not installed
+
+Decision: do not attempt a full Wazuh deployment on this VM under the current deadline. RAM and disk capacity are constrained, and the container runtime prerequisite is absent.
+
+Status: Wazuh ingestion, alert correlation, and end-to-end SIEM validation remain incomplete.
