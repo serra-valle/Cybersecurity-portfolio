@@ -1,0 +1,107 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"templates.gatekeeper.sh/v1","kind":"ConstraintTemplate","metadata":{"annotations":{},"name":"k8saegiscontainersecurity"},"spec":{"crd":{"spec":{"names":{"kind":"K8sAegisContainerSecurity"},"validation":{"openAPIV3Schema":{"type":"object"}}}},"targets":[{"code":[{"engine":"Rego","source":{"rego":"package k8saegiscontainersecurity\n\nall_containers contains {\"container_type\": \"container\", \"container\": c} if {\n  c := input.review.object.spec.containers[_]\n}\n\nall_containers contains {\"container_type\": \"initContainer\", \"container\": c} if {\n  containers := object.get(input.review.object.spec, \"initContainers\", [])\n  c := containers[_]\n}\n\nall_containers contains {\"container_type\": \"ephemeralContainer\", \"container\": c} if {\n  containers := object.get(input.review.object.spec, \"ephemeralContainers\", [])\n  c := containers[_]\n}\n\nviolation contains {\"msg\": msg} if {\n  item := all_containers[_]\n  security_context := object.get(item.container, \"securityContext\", {})\n\n  object.get(security_context, \"runAsNonRoot\", false) != true\n\n  msg := sprintf(\n    \"%s \u003c%s\u003e must set securityContext.runAsNonRoot=true\",\n    [item.container_type, item.container.name]\n  )\n}\n\nviolation contains {\"msg\": msg} if {\n  item := all_containers[_]\n  security_context := object.get(item.container, \"securityContext\", {})\n\n  object.get(security_context, \"readOnlyRootFilesystem\", false) != true\n\n  msg := sprintf(\n    \"%s \u003c%s\u003e must set securityContext.readOnlyRootFilesystem=true\",\n    [item.container_type, item.container.name]\n  )\n}\n\nviolation contains {\"msg\": msg} if {\n  item := all_containers[_]\n  security_context := object.get(item.container, \"securityContext\", {})\n\n  object.get(security_context, \"allowPrivilegeEscalation\", true) != false\n\n  msg := sprintf(\n    \"%s \u003c%s\u003e must set securityContext.allowPrivilegeEscalation=false\",\n    [item.container_type, item.container.name]\n  )\n}\n","version":"v1"}}],"target":"admission.k8s.gatekeeper.sh"}]}}
+  creationTimestamp: "2026-09-24T14:17:47Z"
+  generation: 1
+  name: k8saegiscontainersecurity
+  resourceVersion: "2402"
+  uid: 3e94551a-4b4f-4ad7-accb-138505c01515
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sAegisContainerSecurity
+      validation:
+        legacySchema: false
+        openAPIV3Schema:
+          type: object
+  targets:
+  - code:
+    - engine: Rego
+      source:
+        rego: |
+          package k8saegiscontainersecurity
+
+          all_containers contains {"container_type": "container", "container": c} if {
+            c := input.review.object.spec.containers[_]
+          }
+
+          all_containers contains {"container_type": "initContainer", "container": c} if {
+            containers := object.get(input.review.object.spec, "initContainers", [])
+            c := containers[_]
+          }
+
+          all_containers contains {"container_type": "ephemeralContainer", "container": c} if {
+            containers := object.get(input.review.object.spec, "ephemeralContainers", [])
+            c := containers[_]
+          }
+
+          violation contains {"msg": msg} if {
+            item := all_containers[_]
+            security_context := object.get(item.container, "securityContext", {})
+
+            object.get(security_context, "runAsNonRoot", false) != true
+
+            msg := sprintf(
+              "%s <%s> must set securityContext.runAsNonRoot=true",
+              [item.container_type, item.container.name]
+            )
+          }
+
+          violation contains {"msg": msg} if {
+            item := all_containers[_]
+            security_context := object.get(item.container, "securityContext", {})
+
+            object.get(security_context, "readOnlyRootFilesystem", false) != true
+
+            msg := sprintf(
+              "%s <%s> must set securityContext.readOnlyRootFilesystem=true",
+              [item.container_type, item.container.name]
+            )
+          }
+
+          violation contains {"msg": msg} if {
+            item := all_containers[_]
+            security_context := object.get(item.container, "securityContext", {})
+
+            object.get(security_context, "allowPrivilegeEscalation", true) != false
+
+            msg := sprintf(
+              "%s <%s> must set securityContext.allowPrivilegeEscalation=false",
+              [item.container_type, item.container.name]
+            )
+          }
+        version: v1
+    target: admission.k8s.gatekeeper.sh
+status:
+  byPod:
+  - id: gatekeeper-audit-6f8f785f7b-szgzm
+    observedGeneration: 1
+    operations:
+    - audit
+    - generate
+    - mutation-status
+    - status
+    templateUID: 3e94551a-4b4f-4ad7-accb-138505c01515
+  - id: gatekeeper-controller-manager-588565dcc7-fgcx8
+    observedGeneration: 1
+    operations:
+    - mutation-webhook
+    - webhook
+    templateUID: 3e94551a-4b4f-4ad7-accb-138505c01515
+  - id: gatekeeper-controller-manager-588565dcc7-hfm8s
+    observedGeneration: 1
+    operations:
+    - mutation-webhook
+    - webhook
+    templateUID: 3e94551a-4b4f-4ad7-accb-138505c01515
+  - id: gatekeeper-controller-manager-588565dcc7-tv7t8
+    observedGeneration: 1
+    operations:
+    - mutation-webhook
+    - webhook
+    templateUID: 3e94551a-4b4f-4ad7-accb-138505c01515
+  created: true

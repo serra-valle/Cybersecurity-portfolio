@@ -1,0 +1,5 @@
+NAME                                             READY   STATUS    RESTARTS      AGE   IP           NODE                             NOMINATED NODE   READINESS GATES
+gatekeeper-audit-6f8f785f7b-szgzm                1/1     Running   2 (15d ago)   21d   10.244.0.4   aegis-policy-lab-control-plane   <none>           <none>
+gatekeeper-controller-manager-588565dcc7-fgcx8   1/1     Running   1 (15d ago)   21d   10.244.0.2   aegis-policy-lab-control-plane   <none>           <none>
+gatekeeper-controller-manager-588565dcc7-hfm8s   1/1     Running   1 (15d ago)   21d   10.244.0.3   aegis-policy-lab-control-plane   <none>           <none>
+gatekeeper-controller-manager-588565dcc7-tv7t8   1/1     Running   1 (15d ago)   21d   10.244.0.7   aegis-policy-lab-control-plane   <none>           <none>

@@ -1,0 +1,201 @@
+{"level":"info","ts":1792102392.3912077,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:13:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792102392.4149115,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:13:12Z","semantic":true}
+{"level":"info","ts":1792102392.6342812,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792102392.7467616,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792102392.8929498,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:13:12Z"}
+{"level":"info","ts":1792102392.8930001,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:13:12Z","event_type":"audit_finished","semantic":true,"duration":"502.215552ms"}
+{"level":"info","ts":1792102392.8930554,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:13:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792102392.8946922,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:13:12Z","count of constraints":1}
+{"level":"info","ts":1792102392.894709,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:13:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792102392.8960593,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:13:12Z","count of constraints":1}
+{"level":"info","ts":1792102392.896084,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:13:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792102392.8974407,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:13:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792102392.9137893,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:13:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792102452.3916523,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:14:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792102452.4063036,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:14:12Z","semantic":true}
+{"level":"info","ts":1792102452.6012704,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792102452.7216983,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792102452.8031087,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:14:12Z"}
+{"level":"info","ts":1792102452.8031328,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:14:12Z","event_type":"audit_finished","semantic":true,"duration":"411.592575ms"}
+{"level":"info","ts":1792102452.8031683,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:14:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792102452.8042161,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:14:12Z","count of constraints":1}
+{"level":"info","ts":1792102452.8042243,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:14:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792102452.8055809,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:14:12Z","count of constraints":1}
+{"level":"info","ts":1792102452.8056023,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:14:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792102452.8070984,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:14:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792102452.8206046,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:14:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792102512.3912814,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:15:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792102512.416612,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:15:12Z","semantic":true}
+{"level":"info","ts":1792102512.5577369,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792102512.6573749,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792102512.85938,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:15:12Z"}
+{"level":"info","ts":1792102512.859429,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:15:12Z","event_type":"audit_finished","semantic":true,"duration":"468.286599ms"}
+{"level":"info","ts":1792102512.8594882,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:15:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792102512.8613982,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:15:12Z","count of constraints":1}
+{"level":"info","ts":1792102512.8614085,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:15:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792102512.8626394,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:15:12Z","count of constraints":1}
+{"level":"info","ts":1792102512.8626654,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:15:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792102512.8641365,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:15:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792102512.8723052,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:15:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792102572.390634,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:16:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792102572.4098387,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:16:12Z","semantic":true}
+{"level":"info","ts":1792102572.5236347,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792102572.6809878,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792102572.8808334,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:16:12Z"}
+{"level":"info","ts":1792102572.880867,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:16:12Z","event_type":"audit_finished","semantic":true,"duration":"490.410656ms"}
+{"level":"info","ts":1792102572.880883,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:16:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792102572.8827934,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:16:12Z","count of constraints":1}
+{"level":"info","ts":1792102572.8828123,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:16:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792102572.8842824,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:16:12Z","count of constraints":1}
+{"level":"info","ts":1792102572.8843071,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:16:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792102572.8860006,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:16:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792102572.9036193,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:16:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792102632.3906012,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:17:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792102632.4090345,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:17:12Z","semantic":true}
+{"level":"info","ts":1792102632.5983264,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792102632.6342318,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792102632.8816504,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:17:12Z"}
+{"level":"info","ts":1792102632.8816893,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:17:12Z","event_type":"audit_finished","semantic":true,"duration":"491.255716ms"}
+{"level":"info","ts":1792102632.881736,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:17:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792102632.8833036,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:17:12Z","count of constraints":1}
+{"level":"info","ts":1792102632.8833196,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:17:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792102632.8846455,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:17:12Z","count of constraints":1}
+{"level":"info","ts":1792102632.8846724,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:17:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792102632.8867006,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:17:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792102632.8980134,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:17:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792102688.9359386,"logger":"controller","msg":"handling constraint status update","process":"constraint_status_controller","instance":{"apiVersion":"constraints.gatekeeper.sh/v1beta1","kind":"K8sAegisContainerSecurity","name":"aegis-container-security"}}
+{"level":"info","ts":1792102688.9490585,"logger":"controller","msg":"handling constraint status update","process":"constraint_status_controller","instance":{"apiVersion":"constraints.gatekeeper.sh/v1beta1","kind":"K8sAegisContainerSecurity","name":"aegis-container-security"}}
+{"level":"info","ts":1792102688.965861,"logger":"controller","msg":"handling constraint status update","process":"constraint_status_controller","instance":{"apiVersion":"constraints.gatekeeper.sh/v1beta1","kind":"K8sAegisContainerSecurity","name":"aegis-container-security"}}
+{"level":"info","ts":1792102689.0151458,"logger":"controller","msg":"handling constraint status update","process":"constraint_status_controller","instance":{"apiVersion":"constraints.gatekeeper.sh/v1beta1","kind":"K8sAegisImageIntegrity","name":"aegis-image-integrity"}}
+{"level":"info","ts":1792102689.030478,"logger":"controller","msg":"handling constraint status update","process":"constraint_status_controller","instance":{"apiVersion":"constraints.gatekeeper.sh/v1beta1","kind":"K8sAegisImageIntegrity","name":"aegis-image-integrity"}}
+{"level":"info","ts":1792102689.0445743,"logger":"controller","msg":"handling constraint status update","process":"constraint_status_controller","instance":{"apiVersion":"constraints.gatekeeper.sh/v1beta1","kind":"K8sAegisImageIntegrity","name":"aegis-image-integrity"}}
+{"level":"info","ts":1792102692.3939064,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:18:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792102692.4339116,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:18:12Z","semantic":true}
+{"level":"info","ts":1792102693.2721992,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792102693.3355064,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792102693.8256583,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:18:12Z"}
+{"level":"info","ts":1792102693.8257573,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:18:12Z","event_type":"audit_finished","semantic":true,"duration":"1.43447456s"}
+{"level":"info","ts":1792102693.8258197,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:18:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792102693.8281004,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:18:12Z","count of constraints":1}
+{"level":"info","ts":1792102693.828122,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:18:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792102693.830359,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:18:12Z","count of constraints":1}
+{"level":"info","ts":1792102693.8303955,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:18:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792102693.832645,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:18:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792102693.862802,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:18:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792102752.3904836,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:19:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792102752.409511,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:19:12Z","semantic":true}
+{"level":"info","ts":1792102752.5861478,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792102752.6926272,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792102752.8564692,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:19:12Z"}
+{"level":"info","ts":1792102752.8565319,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:19:12Z","event_type":"audit_finished","semantic":true,"duration":"466.11971ms"}
+{"level":"info","ts":1792102752.8565774,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:19:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792102752.8593297,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:19:12Z","count of constraints":1}
+{"level":"info","ts":1792102752.859367,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:19:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792102752.860804,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:19:12Z","count of constraints":1}
+{"level":"info","ts":1792102752.860862,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:19:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792102752.8623,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:19:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792102752.8777063,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:19:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792102812.3907208,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:20:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792102812.4052458,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:20:12Z","semantic":true}
+{"level":"info","ts":1792102812.5878866,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792102812.5938358,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792102812.8350642,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:20:12Z"}
+{"level":"info","ts":1792102812.8351042,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:20:12Z","event_type":"audit_finished","semantic":true,"duration":"444.486832ms"}
+{"level":"info","ts":1792102812.8351493,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:20:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792102812.8364353,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:20:12Z","count of constraints":1}
+{"level":"info","ts":1792102812.836451,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:20:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792102812.8376877,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:20:12Z","count of constraints":1}
+{"level":"info","ts":1792102812.837712,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:20:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792102812.8391495,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:20:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792102812.8500164,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:20:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792102872.3912354,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:21:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792102872.4222069,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:21:12Z","semantic":true}
+{"level":"info","ts":1792102873.2694895,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792102873.274274,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792102873.5308378,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:21:12Z"}
+{"level":"info","ts":1792102873.5309775,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:21:12Z","event_type":"audit_finished","semantic":true,"duration":"1.140145905s"}
+{"level":"info","ts":1792102873.5310867,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:21:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792102873.534682,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:21:12Z","count of constraints":1}
+{"level":"info","ts":1792102873.5347698,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:21:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792102873.5378125,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:21:12Z","count of constraints":1}
+{"level":"info","ts":1792102873.5378602,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:21:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792102873.5416462,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:21:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792102873.5841336,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:21:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792102932.391085,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:22:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792102932.4065273,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:22:12Z","semantic":true}
+{"level":"info","ts":1792102932.4311056,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792102932.4387167,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792102932.8307064,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:22:12Z"}
+{"level":"info","ts":1792102932.830843,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:22:12Z","event_type":"audit_finished","semantic":true,"duration":"439.917532ms"}
+{"level":"info","ts":1792102932.830871,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:22:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792102932.832185,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:22:12Z","count of constraints":1}
+{"level":"info","ts":1792102932.8322046,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:22:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792102932.8333063,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:22:12Z","count of constraints":1}
+{"level":"info","ts":1792102932.8333528,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:22:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792102932.8348958,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:22:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792102932.8443298,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:22:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792102992.390437,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:23:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792102992.4081533,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:23:12Z","semantic":true}
+{"level":"info","ts":1792102992.6023483,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792102992.623388,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792102992.8524868,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:23:12Z"}
+{"level":"info","ts":1792102992.8525248,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:23:12Z","event_type":"audit_finished","semantic":true,"duration":"462.177201ms"}
+{"level":"info","ts":1792102992.8525631,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:23:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792102992.854427,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:23:12Z","count of constraints":1}
+{"level":"info","ts":1792102992.8544436,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:23:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792102992.855674,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:23:12Z","count of constraints":1}
+{"level":"info","ts":1792102992.855703,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:23:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792102992.8573208,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:23:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792102992.8769882,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:23:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792103052.3918302,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:24:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792103052.4236083,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:24:12Z","semantic":true}
+{"level":"info","ts":1792103053.4177277,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792103053.6216674,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792103054.2981353,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:24:12Z"}
+{"level":"info","ts":1792103054.2982845,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:24:12Z","event_type":"audit_finished","semantic":true,"duration":"1.90728166s"}
+{"level":"info","ts":1792103054.298412,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:24:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792103054.3046288,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:24:12Z","count of constraints":1}
+{"level":"info","ts":1792103054.3046691,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:24:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792103054.3079867,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:24:12Z","count of constraints":1}
+{"level":"info","ts":1792103054.308163,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:24:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792103054.3167222,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:24:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792103054.3444183,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:24:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792103112.3914473,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:25:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792103112.4220488,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:25:12Z","semantic":true}
+{"level":"info","ts":1792103112.549494,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792103112.5645425,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792103112.9933136,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:25:12Z"}
+{"level":"info","ts":1792103112.9933498,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:25:12Z","event_type":"audit_finished","semantic":true,"duration":"602.116672ms"}
+{"level":"info","ts":1792103112.9933872,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:25:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792103112.9946856,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:25:12Z","count of constraints":1}
+{"level":"info","ts":1792103112.9947174,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:25:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792103112.9959266,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:25:12Z","count of constraints":1}
+{"level":"info","ts":1792103112.9959567,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:25:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792103112.9976492,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:25:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792103113.0098495,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:25:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792103172.390691,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:26:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792103172.4058206,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:26:12Z","semantic":true}
+{"level":"info","ts":1792103172.6626854,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792103172.7763555,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792103172.8241687,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:26:12Z"}
+{"level":"info","ts":1792103172.8241916,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:26:12Z","event_type":"audit_finished","semantic":true,"duration":"433.68394ms"}
+{"level":"info","ts":1792103172.8242357,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:26:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792103172.8256047,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:26:12Z","count of constraints":1}
+{"level":"info","ts":1792103172.825625,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:26:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792103172.827274,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:26:12Z","count of constraints":1}
+{"level":"info","ts":1792103172.8272958,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:26:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792103172.8287766,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:26:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792103172.8423169,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:26:12Z","constraintName":"aegis-image-integrity"}
+{"level":"info","ts":1792103232.3913522,"logger":"controller","msg":"auditing constraints and violations","process":"audit","audit_id":"2026-10-15T22:27:12Z","event_type":"audit_started","semantic":true}
+{"level":"info","ts":1792103232.4071512,"logger":"controller","msg":"Auditing via discovery client","process":"audit","audit_id":"2026-10-15T22:27:12Z","semantic":true}
+{"level":"info","ts":1792103232.649415,"msg":"v1 ComponentStatus is deprecated in v1.19+"}
+{"level":"info","ts":1792103232.719758,"msg":"v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"}
+{"level":"info","ts":1792103232.8238177,"logger":"controller","msg":"closing the previous audit reporting thread","process":"audit","audit_id":"2026-10-15T22:27:12Z"}
+{"level":"info","ts":1792103232.823862,"logger":"controller","msg":"auditing is complete","process":"audit","audit_id":"2026-10-15T22:27:12Z","event_type":"audit_finished","semantic":true,"duration":"432.669565ms"}
+{"level":"info","ts":1792103232.8238926,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:27:12Z","resource kind":"K8sAegisContainerSecurity"}
+{"level":"info","ts":1792103232.8257005,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:27:12Z","count of constraints":1}
+{"level":"info","ts":1792103232.825716,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:27:12Z","resource kind":"K8sAegisImageIntegrity"}
+{"level":"info","ts":1792103232.8269987,"logger":"controller","msg":"constraint","process":"audit","audit_id":"2026-10-15T22:27:12Z","count of constraints":1}
+{"level":"info","ts":1792103232.8270385,"logger":"controller","msg":"starting update constraints loop","process":"audit","audit_id":"2026-10-15T22:27:12Z","constraints to update":"map[{constraints.gatekeeper.sh K8sAegisContainerSecurity v1beta1  aegis-container-security}:{} {constraints.gatekeeper.sh K8sAegisImageIntegrity v1beta1  aegis-image-integrity}:{}]"}
+{"level":"info","ts":1792103232.828659,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:27:12Z","constraintName":"aegis-container-security"}
+{"level":"info","ts":1792103232.8413622,"logger":"controller","msg":"updating constraint status","process":"audit","audit_id":"2026-10-15T22:27:12Z","constraintName":"aegis-image-integrity"}

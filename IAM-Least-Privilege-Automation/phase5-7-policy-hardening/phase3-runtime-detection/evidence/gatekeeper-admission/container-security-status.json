@@ -1,0 +1,48 @@
+{
+  "auditTimestamp": "2026-10-15T22:27:12Z",
+  "byPod": [
+    {
+      "constraintUID": "138ac666-555f-4754-8e8d-a1e354afe4ec",
+      "enforced": true,
+      "id": "gatekeeper-audit-6f8f785f7b-szgzm",
+      "observedGeneration": 2,
+      "operations": [
+        "audit",
+        "generate",
+        "mutation-status",
+        "status"
+      ]
+    },
+    {
+      "constraintUID": "138ac666-555f-4754-8e8d-a1e354afe4ec",
+      "enforced": true,
+      "id": "gatekeeper-controller-manager-588565dcc7-fgcx8",
+      "observedGeneration": 2,
+      "operations": [
+        "mutation-webhook",
+        "webhook"
+      ]
+    },
+    {
+      "constraintUID": "138ac666-555f-4754-8e8d-a1e354afe4ec",
+      "enforced": true,
+      "id": "gatekeeper-controller-manager-588565dcc7-hfm8s",
+      "observedGeneration": 2,
+      "operations": [
+        "mutation-webhook",
+        "webhook"
+      ]
+    },
+    {
+      "constraintUID": "138ac666-555f-4754-8e8d-a1e354afe4ec",
+      "enforced": true,
+      "id": "gatekeeper-controller-manager-588565dcc7-tv7t8",
+      "observedGeneration": 2,
+      "operations": [
+        "mutation-webhook",
+        "webhook"
+      ]
+    }
+  ],
+  "totalViolations": 0
+}

@@ -1,7 +1,7 @@
 # Aegis Phase 3: Runtime Detection and Pod Security Validation
 
-**Validation date:** 12 October 2026
-**Status:** Runtime detection and isolated PSS validation demonstrated. SIEM integration remains blocked by infrastructure.
+**Validation date:** 15 October 2026
+**Status:** Falco runtime detection, isolated PSS validation, and Gatekeeper admission enforcement demonstrated. SIEM integration remains blocked by infrastructure.
 
 ## Summary
 
@@ -24,12 +24,16 @@ Native Kubernetes Pod Security Admission was tested with the `restricted:v1.33` 
 | `runAsNonRoot: false` | Rejected by PSS |
 | Missing required seccomp profile | Rejected by PSS |
 | Missing `capabilities.drop: ["ALL"]` | Rejected by PSS |
+| Gatekeeper compliant Pod server-side dry-run | Pass |
+| Gatekeeper noncompliant Pod server-side dry-run | Rejected with four expected findings |
+| Gatekeeper audit cycles | Completed in captured logs |
+| Gatekeeper detection of persisted violations | Not demonstrated |
 
 The authoritative test output is in `evidence/pss-admission-validation.txt`. Individual negative-test responses are retained beside it.
 
 ## Policy boundary
 
-The existing Gatekeeper constraints remain unchanged and scoped to `aegis-policy-test`. The PSS validation was isolated in `aegis-pss-test`; combined PSS and Gatekeeper enforcement has not yet been tested in the same namespace.
+The Gatekeeper constraints are scoped to `aegis-policy-test`. Their enforcement configuration uses `enforcementAction: scoped`, with `deny` configured at `validation.gatekeeper.sh` and `audit.gatekeeper.sh`. The PSS validation remains isolated in `aegis-pss-test`; combined PSS and Gatekeeper enforcement has not yet been tested in the same namespace.
 
 PSS provides baseline restrictions including non-root execution, disabling privilege escalation, dropping Linux capabilities, requiring an acceptable seccomp profile, and prohibiting privileged containers.
 
@@ -54,6 +58,52 @@ These observations are documented as limitations and tuning work, not as confirm
 Wazuh was not installed. The assessed Ubuntu VM had an ARM64 architecture, 4 CPU cores, 3.8 GiB RAM, 10 GiB free disk, and no Docker installation.
 
 Wazuh ingestion and end-to-end alert correlation were therefore not demonstrated. This is an infrastructure blocker, not a successful integration.
+
+## Gatekeeper admission enforcement validation
+
+The two Aegis Gatekeeper constraints enforce container security and image
+integrity in the `aegis-policy-test` namespace.
+
+### Admission tests
+
+A compliant Pod passed server-side dry-run admission with exit code `0`.
+The manifest used a digest-pinned BusyBox image and configured non-root
+execution, a read-only root filesystem, disabled privilege escalation,
+dropped all Linux capabilities, and RuntimeDefault seccomp.
+
+A deliberately noncompliant Pod was rejected during server-side dry-run
+with exit code `1`. The captured response contained four findings:
+
+- `allowPrivilegeEscalation` must be `false`.
+- `readOnlyRootFilesystem` must be `true`.
+- `runAsNonRoot` must be `true`.
+- The image must be pinned with an explicit SHA-256 digest.
+
+Neither test required creating a persistent test Pod.
+
+### Constraint and audit status
+
+Both constraints reported `enforced: true` for their audit and webhook
+controller status entries, with `observedGeneration: 2`. Their latest
+captured audit timestamp was `2026-10-15T22:23:12Z`, and both reported
+zero violations.
+
+Repeated audit cycles completed in the captured logs. The previous
+`K8sNativeValidation engine is missing` / `vap.k8s.io` warning was not
+found in the captured log sample. This observation applies to that sample
+and does not guarantee the warning cannot recur.
+
+### Audit validation limitation
+
+Detection of a pre-existing noncompliant object by the audit process has
+not been demonstrated. The deliberately noncompliant Pod was rejected
+during admission and was never persisted, so zero audit violations is
+consistent with the test design. A separate, safely isolated audit test
+is required before claiming audit violation discovery is validated.
+
+Detailed artifacts and checksums are in
+`evidence/gatekeeper-admission/`. Falco runtime artifacts are in
+`evidence/runtime-write/`.
 
 ## Next steps
 

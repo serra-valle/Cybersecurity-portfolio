@@ -1,0 +1,60 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sAegisImageIntegrity
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"constraints.gatekeeper.sh/v1beta1","kind":"K8sAegisImageIntegrity","metadata":{"annotations":{},"name":"aegis-image-integrity"},"spec":{"enforcementAction":"deny","match":{"kinds":[{"apiGroups":[""],"kinds":["Pod"]}],"namespaces":["aegis-policy-test"]}}}
+  creationTimestamp: "2026-09-24T14:18:20Z"
+  generation: 2
+  name: aegis-image-integrity
+  resourceVersion: "171406"
+  uid: 86019930-ad7e-4fc8-9124-91fa003762dd
+spec:
+  enforcementAction: scoped
+  match:
+    kinds:
+    - apiGroups:
+      - ""
+      kinds:
+      - Pod
+    namespaces:
+    - aegis-policy-test
+  scopedEnforcementActions:
+  - action: deny
+    enforcementPoints:
+    - name: validation.gatekeeper.sh
+    - name: audit.gatekeeper.sh
+status:
+  auditTimestamp: "2026-10-15T22:27:12Z"
+  byPod:
+  - constraintUID: 86019930-ad7e-4fc8-9124-91fa003762dd
+    enforced: true
+    id: gatekeeper-audit-6f8f785f7b-szgzm
+    observedGeneration: 2
+    operations:
+    - audit
+    - generate
+    - mutation-status
+    - status
+  - constraintUID: 86019930-ad7e-4fc8-9124-91fa003762dd
+    enforced: true
+    id: gatekeeper-controller-manager-588565dcc7-fgcx8
+    observedGeneration: 2
+    operations:
+    - mutation-webhook
+    - webhook
+  - constraintUID: 86019930-ad7e-4fc8-9124-91fa003762dd
+    enforced: true
+    id: gatekeeper-controller-manager-588565dcc7-hfm8s
+    observedGeneration: 2
+    operations:
+    - mutation-webhook
+    - webhook
+  - constraintUID: 86019930-ad7e-4fc8-9124-91fa003762dd
+    enforced: true
+    id: gatekeeper-controller-manager-588565dcc7-tv7t8
+    observedGeneration: 2
+    operations:
+    - mutation-webhook
+    - webhook
+  totalViolations: 0

@@ -1,0 +1,3 @@
+pod/aegis-compliant-admission-probe
+
+exit_code=0

@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: falco-runtime-test
+  namespace: aegis-policy-test
+  labels:
+    app: falco-runtime-test
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: test
+      image: docker.io/library/busybox@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
+      imagePullPolicy: IfNotPresent
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          set -eu
+          mkdir -p /etc/aegis-test
+          printf 'Aegis controlled runtime detection test\n' > /etc/aegis-test/runtime-proof.txt
+          echo AEGIS_TEST_WRITE_COMPLETED
+          sleep 3600
+      securityContext:
+        runAsNonRoot: true
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+      volumeMounts:
+        - name: test-etc
+          mountPath: /etc/aegis-test
+  volumes:
+    - name: test-etc
+      emptyDir: {}

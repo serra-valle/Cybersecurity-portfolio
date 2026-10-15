@@ -1,0 +1,6 @@
+Error from server (Forbidden): error when creating "/tmp/aegis-gatekeeper-denial-probe.yaml": admission webhook "validation.gatekeeper.sh" denied the request: [aegis-container-security] container <probe> must set securityContext.allowPrivilegeEscalation=false
+[aegis-container-security] container <probe> must set securityContext.readOnlyRootFilesystem=true
+[aegis-container-security] container <probe> must set securityContext.runAsNonRoot=true
+[aegis-image-integrity] container <probe> must use an image pinned with an explicit sha256 digest; found <busybox:1.36>
+
+exit_code=1
