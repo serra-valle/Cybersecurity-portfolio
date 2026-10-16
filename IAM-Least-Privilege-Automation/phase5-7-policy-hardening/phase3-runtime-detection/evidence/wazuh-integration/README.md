@@ -41,16 +41,9 @@ date +%s
 timedatectl
 systemctl is-active aegis-falco-forwarder
 systemctl is-active wazuh-agent
-jq -e . /var/log/aegis/falco-events.jsonl >/dev/null
 ```
 
-The final command validates the entire JSONL file as one JSON document and may fail for a multi-record JSONL file. For JSONL validation, use:
-
-```bash
-jq -e -c . /var/log/aegis/falco-events.jsonl >/dev/null
-```
-
-For line-by-line counts:
+For JSONL validation, use a line-by-line parser so the result includes the number of valid records and any malformed line numbers:
 
 ```bash
 python3 - <<'PY'
@@ -94,10 +87,10 @@ date -u
 date +%s
 timedatectl
 sudo /var/ossec/bin/wazuh-analysisd -t
-sudo grep -F '"id":"100501"' /var/ossec/logs/alerts/alerts.json | tail -n 1
+sudo jq -c 'select(.rule.id == "100501")' /var/ossec/logs/alerts/alerts.json | tail -n 1
 ```
 
-The exact JSON field order and formatting may vary. Inspect the latest alert and verify the `rule.id`, `rule.level`, agent, source location, event marker, and original Falco timestamp rather than relying only on a grep match.
+The alert file is newline-delimited JSON, so `jq` can process each alert record. If the query returns no output, do not infer that an alert exists. Inspect the actual record and verify the `rule.id`, `rule.level`, agent, source location, unique event marker, and original Falco timestamp. Field types can vary; adjust the rule-ID comparison only after inspecting a real record.
 
 ## Suggested artifact names
 
