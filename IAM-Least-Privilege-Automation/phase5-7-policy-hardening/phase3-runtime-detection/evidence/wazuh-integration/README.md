@@ -1,0 +1,118 @@
+# Falco-to-Wazuh Integration Evidence
+
+## Purpose
+
+This directory is for sanitized, reproducible evidence of the Phase 3 path from a controlled Falco runtime event to a Wazuh manager alert. It must contain only artifacts actually captured from the lab. Do not add fabricated sample output or copy credentials, tokens, private keys, or unrelated host logs.
+
+## Current validation status
+
+The live test demonstrated this path for a controlled filesystem-write event:
+
+1. Falco detected a write below `/etc/aegis-test` inside the `falco-runtime-test` Pod.
+2. The Kali forwarder appended Falco JSON to `/var/log/aegis/falco-events.jsonl`.
+3. Wazuh agent `kali-aegis-lab` collected the file as JSON and forwarded it.
+4. Wazuh manager rule `100501` at level `8` generated an alert in `/var/ossec/logs/alerts/alerts.json`.
+
+This is evidence of ingestion and manager rule matching for the specific controlled event. It is not proof of comprehensive runtime coverage or production readiness.
+
+Not yet verified: forwarding of a controlled shell event, Wazuh indexer ingestion, dashboard visibility, and end-to-end alert latency. Timestamp interpretation should be checked against UTC clock outputs from both hosts before reporting latency.
+
+## Evidence capture checklist
+
+Capture from the Kali VM and the Ubuntu Wazuh manager separately. Keep the raw source event and alert only if reviewed for sensitive data. Prefer a minimal sanitized excerpt containing event timestamp, rule name, relevant file path, Pod/namespace, agent name, Wazuh rule ID and level. Redact public/private addresses, usernames, host identifiers, and unrelated event fields where they are not needed to reproduce the finding.
+
+### Kali VM
+
+Record:
+
+- UTC/local clock state and Unix epoch, to support later timestamp comparisons.
+- Forwarder systemd status and the specific forwarder configuration/script version used.
+- Wazuh agent status and the localfile JSON collection stanza for `/var/log/aegis/falco-events.jsonl`.
+- JSONL validation counts: total lines, valid JSON records, and invalid records.
+- A fresh controlled-write Falco event identified by a unique marker, not merely the newest event in the file.
+- SHA-256 checksums for the sanitized evidence files.
+
+Example safe inspection commands:
+
+```bash
+date
+date -u
+date +%s
+timedatectl
+systemctl is-active aegis-falco-forwarder
+systemctl is-active wazuh-agent
+jq -e . /var/log/aegis/falco-events.jsonl >/dev/null
+```
+
+The final command validates the entire JSONL file as one JSON document and may fail for a multi-record JSONL file. For JSONL validation, use:
+
+```bash
+jq -e -c . /var/log/aegis/falco-events.jsonl >/dev/null
+```
+
+For line-by-line counts:
+
+```bash
+python3 - <<'PY'
+import json
+from pathlib import Path
+p = Path("/var/log/aegis/falco-events.jsonl")
+total = valid = 0
+invalid = []
+with p.open() as f:
+    for n, line in enumerate(f, 1):
+        if not line.strip():
+            continue
+        total += 1
+        try:
+            json.loads(line)
+            valid += 1
+        except json.JSONDecodeError:
+            invalid.append(n)
+print(f"nonempty_lines={total} valid_json={valid} invalid_json={len(invalid)}")
+if invalid:
+    print("invalid_line_numbers=" + ",".join(map(str, invalid[:50])))
+PY
+```
+
+### Ubuntu Wazuh manager
+
+Record:
+
+- UTC/local clock state and Unix epoch.
+- Successful validation of Wazuh analysis configuration.
+- A sanitized alert for rule `100501` matching the fresh marker event.
+- Alert count for rule `100501` before and after the test, if this can be obtained without exposing unrelated alerts.
+- Service status and any relevant indexer/dashboard check results.
+- SHA-256 checksums for the sanitized evidence files.
+
+Example checks:
+
+```bash
+date
+date -u
+date +%s
+timedatectl
+sudo /var/ossec/bin/wazuh-analysisd -t
+sudo grep -F '"id":"100501"' /var/ossec/logs/alerts/alerts.json | tail -n 1
+```
+
+The exact JSON field order and formatting may vary. Inspect the latest alert and verify the `rule.id`, `rule.level`, agent, source location, event marker, and original Falco timestamp rather than relying only on a grep match.
+
+## Suggested artifact names
+
+Use only after creating the corresponding real artifacts:
+
+- `kali-clock-and-service-status.txt`
+- `falco-event-sanitized.json`
+- `wazuh-agent-config-sanitized.xml`
+- `manager-clock-and-analysis-check.txt`
+- `wazuh-alert-sanitized.json`
+- `shell-event-validation.txt`
+- `SHA256SUMS.txt`
+
+## Integrity and scope
+
+After sanitizing and reviewing each captured artifact, run `sha256sum` over the evidence files and save the output as `SHA256SUMS.txt`. Recompute the checksum file whenever its contents change. Do not claim that a checksum proves authenticity; it supports integrity checking after capture.
+
+This evidence is a lab validation record. It does not claim detection of all container threats, production-scale reliability, complete alert correlation, or confirmed dashboard/indexer delivery unless those are separately tested and evidenced.
