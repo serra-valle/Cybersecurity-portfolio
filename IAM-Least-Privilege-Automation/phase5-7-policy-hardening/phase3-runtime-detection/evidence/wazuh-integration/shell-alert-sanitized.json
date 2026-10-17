@@ -1,0 +1,12 @@
+{
+  "evidence_type": "sanitized Wazuh manager alert excerpt",
+  "timestamp": "2026-10-17T10:37:46.008+0000",
+  "agent": "kali-aegis-lab",
+  "rule_id": "100502",
+  "level": 7,
+  "description": "Aegis Falco detected a shell with an attached terminal in a container.",
+  "source_location": "/var/log/aegis/falco-events.jsonl",
+  "matched_validation_marker": "aegis-shell-validation-20261017-02",
+  "falco_event_time": "2026-10-17T10:37:45.756102876Z",
+  "observed_event_to_alert_timestamp_difference_ms": 251.897124
+}
