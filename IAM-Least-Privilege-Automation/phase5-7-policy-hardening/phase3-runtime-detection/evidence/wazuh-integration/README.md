@@ -8,14 +8,16 @@ This directory is for sanitized, reproducible evidence of the Phase 3 path from 
 
 The live test demonstrated this path for a controlled filesystem-write event:
 
-1. Falco detected a write below `/etc/aegis-test` inside the `falco-runtime-test` Pod.
+1. Falco detected a write below `/etc/aegis-test` inside the active `falco-runtime-test-active` Pod. The test process ran as UID/GID `65532`.
 2. The Kali forwarder appended Falco JSON to `/var/log/aegis/falco-events.jsonl`.
 3. Wazuh agent `kali-aegis-lab` collected the file as JSON and forwarded it.
 4. Wazuh manager rule `100501` at level `8` generated an alert in `/var/ossec/logs/alerts/alerts.json`.
 
 This is evidence of ingestion and manager rule matching for the specific controlled event. It is not proof of comprehensive runtime coverage or production readiness.
 
-Not yet verified: forwarding of a controlled shell event, Wazuh indexer ingestion, dashboard visibility, and end-to-end alert latency. Timestamp interpretation should be checked against UTC clock outputs from both hosts before reporting latency.
+A single manager alert was observed at `2026-10-17T10:18:02.871+0000` for a Falco event timestamped `2026-10-17T10:18:02.097373391Z`, a difference of `773.626609 ms` (approximately `774 ms`). This is one event-timestamp comparison, not a latency benchmark; capture both hosts' UTC clock state before making broader timing claims.
+
+Not yet verified: forwarding of a controlled shell event, Wazuh indexer ingestion, and dashboard visibility. A sanitized normalized manager-alert excerpt is committed as `wazuh-alert-sanitized.json`; the collector-side event excerpt, relevant service/configuration captures, and final checksum manifest remain to be added.
 
 ## Evidence capture checklist
 
