@@ -1,7 +1,7 @@
 # Aegis Phase 3: Runtime Detection and Pod Security Validation
 
 **Validation date:** 17 October 2026
-**Status:** Falco runtime detection, isolated PSS validation, Gatekeeper admission enforcement, and Falco-to-Wazuh ingestion with a custom alert for a controlled filesystem-write event demonstrated. A fresh event from the active test Pod matched Wazuh manager rule `100501` (level `8`). Shell-event forwarding and Wazuh indexer/dashboard visibility remain unverified.
+**Status:** Falco runtime detection, isolated PSS validation, Gatekeeper admission enforcement, and Falco-to-Wazuh ingestion with a custom alert for a controlled filesystem-write event demonstrated. A fresh event from the active test Pod matched Wazuh manager rule `100501` (level `8`). Sanitized Falco collector and Wazuh manager alert excerpts are committed. Shell-event forwarding and Wazuh indexer/dashboard visibility remain unverified.
 
 ## Summary
 
@@ -76,7 +76,7 @@ The latest controlled write event was observed in the manager alert output:
 - Pod/namespace: `falco-runtime-test-active` / `aegis-policy-test`
 - Runtime UID: `65532`
 
-This is one successful observed event, not a latency benchmark or guarantee. A sanitized normalized excerpt from the actual manager query output is stored at `evidence/wazuh-integration/wazuh-alert-sanitized.json`. The full raw alert is not committed.
+This is one successful observed event, not a latency benchmark or guarantee. Sanitized normalized excerpts from the actual collector query and manager alert query are stored at `evidence/wazuh-integration/falco-event-sanitized.json` and `evidence/wazuh-integration/wazuh-alert-sanitized.json`. Raw host logs and unrelated container identifiers are not committed.
 
 The tested deployment used Wazuh `4.14.9-1` on the Ubuntu manager and the Kali agent. This demonstrates end-to-end ingestion and rule matching for the specific controlled filesystem-write event. It does not establish comprehensive runtime coverage or production alerting readiness.
 
@@ -84,7 +84,7 @@ The tested deployment used Wazuh `4.14.9-1` on the Ubuntu manager and the Kali a
 
 - **Falco shell-event forwarding:** not yet verified end to end. Falco detection alone does not prove Wazuh ingestion.
 - **Indexer/dashboard visibility:** not yet verified. Manager-side connector logs included warnings about missing keystore credentials and retries for `wazuh-states-*`; these warnings did not prevent the confirmed manager alert, but indexing and dashboard presentation still need separate validation.
-- **Evidence packaging:** the sanitized manager-alert excerpt is committed. The collector-side event excerpt, service/configuration checks, and final checksum manifest still need to be captured and reviewed before the portfolio evidence package is complete.
+- **Evidence packaging:** sanitized collector-event and manager-alert excerpts are committed. UTC clock state, service/configuration captures, JSONL validation counts, and the final checksum manifest still need to be captured and reviewed before the portfolio evidence package is complete.
 
 The capture procedure and evidence boundary are documented in `evidence/wazuh-integration/README.md`.
 
@@ -136,7 +136,7 @@ Detailed artifacts and checksums are in
 
 ## Next steps
 
-1. Capture and sanitize the collector-side Falco JSON record, relevant service/configuration checks, and final checksums. The manager-alert excerpt is already recorded in `evidence/wazuh-integration/wazuh-alert-sanitized.json`.
+1. Capture UTC clock state, service/configuration checks, JSONL validation counts, and final checksums. Sanitized collector and manager excerpts are recorded in `evidence/wazuh-integration/falco-event-sanitized.json` and `evidence/wazuh-integration/wazuh-alert-sanitized.json`.
 2. Trigger a controlled shell event and verify that it reaches the Wazuh manager and matches the expected alerting logic.
 3. Validate indexer and dashboard visibility; investigate the recorded connector warnings without disturbing the working manager alert path.
 4. Tune only confirmed benign noise and preserve before/after evidence for every rule change.
