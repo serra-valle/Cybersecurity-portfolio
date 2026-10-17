@@ -1,7 +1,7 @@
 # Aegis Phase 3: Runtime Detection and Pod Security Validation
 
-**Validation date:** 16 October 2026
-**Status:** Falco runtime detection, isolated PSS validation, Gatekeeper admission enforcement, and Falco-to-Wazuh ingestion with a custom alert for a controlled filesystem-write event demonstrated. Shell-event forwarding and Wazuh indexer/dashboard visibility remain unverified.
+**Validation date:** 17 October 2026
+**Status:** Falco runtime detection, isolated PSS validation, Gatekeeper admission enforcement, and Falco-to-Wazuh ingestion with a custom alert for a controlled filesystem-write event demonstrated. A fresh event from the active test Pod matched Wazuh manager rule `100501` (level `8`). Shell-event forwarding and Wazuh indexer/dashboard visibility remain unverified.
 
 ## Summary
 
@@ -55,14 +55,28 @@ These observations are documented as limitations and tuning work, not as confirm
 
 ## SIEM integration status
 
-A controlled Falco filesystem-write event was successfully ingested by the existing Wazuh deployment and matched a custom manager rule.
+A fresh controlled Falco filesystem-write event from the active test Pod was successfully ingested by the existing Wazuh deployment and matched a custom manager rule on 17 October 2026.
 
 ### Demonstrated event path
 
-1. Falco detected a controlled write below `/etc/aegis-test` inside the `falco-runtime-test` Pod. This was not a write to the Kubernetes node's host `/etc`.
+1. Falco detected a controlled write below `/etc/aegis-test` inside the `falco-runtime-test-active` Pod. This was not a write to the Kubernetes node's host `/etc`. The rule was updated to match the active test Pod while preserving the original test Pod match.
 2. The Kali forwarder appended Falco JSON to `/var/log/aegis/falco-events.jsonl`.
 3. The Wazuh agent `kali-aegis-lab` monitored that file using JSON log collection and forwarded the event to the manager.
 4. Wazuh manager rule `100501`, level `8`, matched the event and generated an alert in `/var/ossec/logs/alerts/alerts.json`. The alert's source location was `/var/log/aegis/falco-events.jsonl`.
+
+### Fresh verification result (17 October 2026)
+
+The latest controlled write event was observed in the manager alert output:
+
+- Falco event timestamp: `2026-10-17T10:18:02.097373391Z`
+- Wazuh manager alert timestamp: `2026-10-17T10:18:02.871+0000`
+- Calculated event-to-alert timestamp difference: `773.626609 ms` (approximately `774 ms`)
+- Wazuh rule: `100501`, level `8`
+- File: `/etc/aegis-test/runtime-proof.txt`
+- Pod/namespace: `falco-runtime-test-active` / `aegis-policy-test`
+- Runtime UID: `65532`
+
+This is one successful observed event, not a latency benchmark or guarantee. A sanitized normalized excerpt from the actual manager query output is stored at `evidence/wazuh-integration/wazuh-alert-sanitized.json`. The full raw alert is not committed.
 
 The tested deployment used Wazuh `4.14.9-1` on the Ubuntu manager and the Kali agent. This demonstrates end-to-end ingestion and rule matching for the specific controlled filesystem-write event. It does not establish comprehensive runtime coverage or production alerting readiness.
 
@@ -70,7 +84,7 @@ The tested deployment used Wazuh `4.14.9-1` on the Ubuntu manager and the Kali a
 
 - **Falco shell-event forwarding:** not yet verified end to end. Falco detection alone does not prove Wazuh ingestion.
 - **Indexer/dashboard visibility:** not yet verified. Manager-side connector logs included warnings about missing keystore credentials and retries for `wazuh-states-*`; these warnings did not prevent the confirmed manager alert, but indexing and dashboard presentation still need separate validation.
-- **Evidence packaging:** sanitized event and alert artifacts still need to be exported into `evidence/wazuh-integration/` and checksummed before the portfolio record is considered complete.
+- **Evidence packaging:** the sanitized manager-alert excerpt is committed. The collector-side event excerpt, service/configuration checks, and final checksum manifest still need to be captured and reviewed before the portfolio evidence package is complete.
 
 The capture procedure and evidence boundary are documented in `evidence/wazuh-integration/README.md`.
 
@@ -122,7 +136,7 @@ Detailed artifacts and checksums are in
 
 ## Next steps
 
-1. Capture and sanitize the live Falco event, Wazuh manager alert, relevant service/configuration checks, and checksums using `evidence/wazuh-integration/README.md`.
+1. Capture and sanitize the collector-side Falco JSON record, relevant service/configuration checks, and final checksums. The manager-alert excerpt is already recorded in `evidence/wazuh-integration/wazuh-alert-sanitized.json`.
 2. Trigger a controlled shell event and verify that it reaches the Wazuh manager and matches the expected alerting logic.
 3. Validate indexer and dashboard visibility; investigate the recorded connector warnings without disturbing the working manager alert path.
 4. Tune only confirmed benign noise and preserve before/after evidence for every rule change.
