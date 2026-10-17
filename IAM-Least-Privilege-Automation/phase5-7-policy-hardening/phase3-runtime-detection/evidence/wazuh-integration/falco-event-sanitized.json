@@ -1,0 +1,29 @@
+{
+  "evidence_type": "sanitized_normalized_excerpt_from_live_kali_collector_query",
+  "validation_date_utc": "2026-10-17",
+  "source_location": "/var/log/aegis/falco-events.jsonl",
+  "collector_service_status_at_capture": {
+    "aegis_falco_forwarder": "active",
+    "wazuh_agent": "active"
+  },
+  "event": {
+    "time": "2026-10-17T10:18:02.097373391Z",
+    "hostname": "aegis-policy-lab-control-plane",
+    "rule": "Aegis Test Pod Write Below Etc",
+    "priority": "Warning",
+    "source": "syscall",
+    "description": "Aegis test pod wrote below /etc",
+    "file": "/etc/aegis-test/runtime-proof.txt",
+    "process": "sh",
+    "uid": 65532,
+    "pod": "falco-runtime-test-active",
+    "namespace": "aegis-policy-test",
+    "tags": [
+      "aegis",
+      "container",
+      "filesystem",
+      "mitre_persistence"
+    ]
+  },
+  "interpretation": "This sanitized event excerpt was returned by querying the live collector JSONL file after the successful Falco DaemonSet rollout. The matching manager alert is documented separately in wazuh-alert-sanitized.json. This artifact excludes the raw command line, container ID, and image identifier."
+}
