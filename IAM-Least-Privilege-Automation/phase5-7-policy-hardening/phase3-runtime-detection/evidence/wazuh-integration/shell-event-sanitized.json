@@ -1,0 +1,21 @@
+{
+  "evidence_type": "sanitized Falco collector event excerpt",
+  "time": "2026-10-17T10:37:45.756102876Z",
+  "rule": "Terminal shell in container",
+  "priority": "Notice",
+  "source": "syscall",
+  "tags": [
+    "T1059",
+    "container",
+    "mitre_execution",
+    "shell"
+  ],
+  "event_type": "execve",
+  "process": "sh",
+  "process_path": "/bin/sh",
+  "terminal_attached": true,
+  "user_uid": 65532,
+  "pod": "falco-runtime-test-active",
+  "namespace": "aegis-policy-test",
+  "validation_marker": "aegis-shell-validation-20261017-02"
+}
