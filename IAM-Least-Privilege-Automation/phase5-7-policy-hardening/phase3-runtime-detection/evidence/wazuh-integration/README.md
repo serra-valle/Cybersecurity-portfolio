@@ -13,11 +13,11 @@ The live test demonstrated this path for a controlled filesystem-write event:
 3. Wazuh agent `kali-aegis-lab` collected the file as JSON and forwarded it.
 4. Wazuh manager rule `100501` at level `8` generated an alert in `/var/ossec/logs/alerts/alerts.json`.
 
-This is evidence of ingestion and manager rule matching for the specific controlled event. It is not proof of comprehensive runtime coverage or production readiness.
+This is evidence of ingestion and manager rule matching for the specific controlled events. It is not proof of comprehensive runtime coverage or production readiness.
 
-A single manager alert was observed at `2026-10-17T10:18:02.871+0000` for a Falco event timestamped `2026-10-17T10:18:02.097373391Z`, a difference of `773.626609 ms` (approximately `774 ms`). This is one event-timestamp comparison, not a latency benchmark; capture both hosts' UTC clock state before making broader timing claims.
+For the filesystem-write test, a manager alert was observed at `2026-10-17T10:18:02.871+0000` for a Falco event timestamped `2026-10-17T10:18:02.097373391Z`, a difference of `773.626609 ms` (approximately `774 ms`). For the shell test, the manager alert was observed at `2026-10-17T10:37:46.008+0000` for a Falco event timestamped `2026-10-17T10:37:45.756102876Z`, a difference of approximately `251.897 ms`. Each is a single event-timestamp comparison, not a latency benchmark; capture both hosts' UTC clock state before making broader timing claims.
 
-Sanitized normalized excerpts from the actual collector query and manager alert query are committed as `falco-event-sanitized.json` and `wazuh-alert-sanitized.json`. The reviewed custom rule source is stored at `../../falco/aegis-runtime-write.yaml`; the live ConfigMap change should be incorporated into the deployment's declarative configuration before future Helm upgrades or cluster recreation. Not yet verified: forwarding of a controlled shell event, Wazuh indexer ingestion, and dashboard visibility. UTC clock state, service/configuration captures, JSONL validation counts, and the final checksum manifest remain to be added.
+Sanitized normalized excerpts from the collector and manager queries are committed as `falco-event-sanitized.json`, `wazuh-alert-sanitized.json`, `shell-event-sanitized.json`, and `shell-alert-sanitized.json`. The reviewed custom rule source is stored at `../../falco/aegis-runtime-write.yaml`; the live ConfigMap change should be incorporated into the deployment's declarative configuration before future Helm upgrades or cluster recreation. Wazuh indexer ingestion and dashboard visibility are not yet verified. UTC clock state, service/configuration captures, JSONL validation counts, and the final checksum manifest remain to be added.
 
 ## Evidence capture checklist
 
@@ -31,7 +31,7 @@ Record:
 - Forwarder systemd status and the specific forwarder configuration/script version used.
 - Wazuh agent status and the localfile JSON collection stanza for `/var/log/aegis/falco-events.jsonl`.
 - JSONL validation counts: total lines, valid JSON records, and invalid records.
-- A fresh controlled-write Falco event identified by a unique marker, not merely the newest event in the file.
+- Fresh controlled filesystem-write and shell-event Falco records identified by unique markers, not merely the newest events in the file.
 - SHA-256 checksums for the sanitized evidence files.
 
 Example safe inspection commands:
@@ -76,7 +76,7 @@ Record:
 
 - UTC/local clock state and Unix epoch.
 - Successful validation of Wazuh analysis configuration.
-- A sanitized alert for rule `100501` matching the fresh marker event.
+- Sanitized alerts for rules `100501` and `100502` matching their respective fresh marker events.
 - Alert count for rule `100501` before and after the test, if this can be obtained without exposing unrelated alerts.
 - Service status and any relevant indexer/dashboard check results.
 - SHA-256 checksums for the sanitized evidence files.
@@ -103,7 +103,8 @@ Use only after creating the corresponding real artifacts:
 - `wazuh-agent-config-sanitized.xml`
 - `manager-clock-and-analysis-check.txt`
 - `wazuh-alert-sanitized.json`
-- `shell-event-validation.txt`
+- `shell-event-sanitized.json`
+- `shell-alert-sanitized.json`
 - `SHA256SUMS.txt`
 
 ## Integrity and scope
