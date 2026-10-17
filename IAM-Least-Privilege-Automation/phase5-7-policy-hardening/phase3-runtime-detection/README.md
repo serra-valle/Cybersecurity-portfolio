@@ -59,7 +59,7 @@ A fresh controlled Falco filesystem-write event from the active test Pod was suc
 
 ### Demonstrated event path
 
-1. Falco detected a controlled write below `/etc/aegis-test` inside the `falco-runtime-test-active` Pod. This was not a write to the Kubernetes node's host `/etc`. The rule was updated to match the active test Pod while preserving the original test Pod match.
+1. Falco detected a controlled write below `/etc/aegis-test` inside the `falco-runtime-test-active` Pod. This was not a write to the Kubernetes node's host `/etc`. The rule was updated to match the active test Pod while preserving the original test Pod match. The reviewed rule source is stored at `falco/aegis-runtime-write.yaml`.
 2. The Kali forwarder appended Falco JSON to `/var/log/aegis/falco-events.jsonl`.
 3. The Wazuh agent `kali-aegis-lab` monitored that file using JSON log collection and forwarded the event to the manager.
 4. Wazuh manager rule `100501`, level `8`, matched the event and generated an alert in `/var/ossec/logs/alerts/alerts.json`. The alert's source location was `/var/log/aegis/falco-events.jsonl`.
@@ -86,7 +86,7 @@ The tested deployment used Wazuh `4.14.9-1` on the Ubuntu manager and the Kali a
 - **Indexer/dashboard visibility:** not yet verified. Manager-side connector logs included warnings about missing keystore credentials and retries for `wazuh-states-*`; these warnings did not prevent the confirmed manager alert, but indexing and dashboard presentation still need separate validation.
 - **Evidence packaging:** sanitized collector-event and manager-alert excerpts are committed. UTC clock state, service/configuration captures, JSONL validation counts, and the final checksum manifest still need to be captured and reviewed before the portfolio evidence package is complete.
 
-The capture procedure and evidence boundary are documented in `evidence/wazuh-integration/README.md`.
+The custom Falco rule source is stored in `falco/aegis-runtime-write.yaml`. The live ConfigMap was patched for this validation; the repository rule file is the reviewed source to carry forward into the managed deployment configuration. The capture procedure and evidence boundary are documented in `evidence/wazuh-integration/README.md`.
 
 ## Gatekeeper admission enforcement validation
 
