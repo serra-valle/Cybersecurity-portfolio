@@ -1,0 +1,24 @@
+{
+  "evidence_type": "sanitized_normalized_excerpt_from_live_wazuh_manager_query",
+  "validation_date_utc": "2026-10-17",
+  "manager_alert_time": "2026-10-17T10:18:02.871+0000",
+  "falco_event_time": "2026-10-17T10:18:02.097373391Z",
+  "observed_event_to_alert_timestamp_difference_ms": 773.626609,
+  "observed_event_to_alert_timestamp_difference_rounded_ms": 774,
+  "agent": "kali-aegis-lab",
+  "rule": {
+    "id": "100501",
+    "level": 8,
+    "description": "Aegis Falco detected a write-open event under /etc in the test pod."
+  },
+  "location": "/var/log/aegis/falco-events.jsonl",
+  "event": {
+    "description": "Aegis test pod wrote below /etc",
+    "file": "/etc/aegis-test/runtime-proof.txt",
+    "uid": 65532,
+    "process": "sh",
+    "pod": "falco-runtime-test-active",
+    "namespace": "aegis-policy-test"
+  },
+  "interpretation": "One controlled filesystem-write event matched the Wazuh manager rule. The timestamp difference is a single observation, not a performance benchmark. This normalized excerpt omits the raw full_log and unrelated container identifiers."
+}

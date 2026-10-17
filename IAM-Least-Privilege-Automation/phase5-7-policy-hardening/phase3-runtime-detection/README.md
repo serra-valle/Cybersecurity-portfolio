@@ -1,7 +1,7 @@
 # Aegis Phase 3: Runtime Detection and Pod Security Validation
 
-**Validation date:** 15 October 2026
-**Status:** Falco runtime detection, isolated PSS validation, and Gatekeeper admission enforcement demonstrated. SIEM integration remains blocked by infrastructure.
+**Validation date:** 17 October 2026
+**Status:** Falco runtime detection, isolated PSS validation, Gatekeeper admission enforcement, and Falco-to-Wazuh ingestion are demonstrated for two controlled events: a filesystem-write event matched Wazuh rule `100501` (level `8`), and an interactive-shell event matched rule `100502` (level `7`). Sanitized collector and manager-alert excerpts for both events are committed. Wazuh indexer/dashboard visibility remains unverified.
 
 ## Summary
 
@@ -9,7 +9,7 @@ This phase adds runtime threat detection with Falco and validates Kubernetes Pod
 
 Falco ran on the Kind cluster using modern eBPF. Its DaemonSet was available, and the Falco Pod was running with both containers ready and no restarts at the time of inspection.
 
-Controlled runtime testing generated a custom alert for a write below `/etc` by the Aegis test Pod. A shell-execution detection was also observed during earlier controlled testing.
+Controlled runtime testing generated a custom alert for a write below `/etc` by the Aegis test Pod. A separate controlled shell-execution event was detected by Falco, recorded by the collector, and matched Wazuh manager rule `100502` at level `7` on 17 October 2026.
 
 Native Kubernetes Pod Security Admission was tested with the `restricted:v1.33` profile. The compliant Pod was admitted and reached Ready state. Five negative test cases were rejected. The corrected privileged-container test was required because the first manifest combined incompatible security settings and did not establish a PSS denial.
 
@@ -55,9 +55,52 @@ These observations are documented as limitations and tuning work, not as confirm
 
 ## SIEM integration status
 
-Wazuh was not installed. The assessed Ubuntu VM had an ARM64 architecture, 4 CPU cores, 3.8 GiB RAM, 10 GiB free disk, and no Docker installation.
+A fresh controlled Falco filesystem-write event from the active test Pod was successfully ingested by the existing Wazuh deployment and matched a custom manager rule on 17 October 2026.
 
-Wazuh ingestion and end-to-end alert correlation were therefore not demonstrated. This is an infrastructure blocker, not a successful integration.
+### Demonstrated event path
+
+1. Falco detected a controlled write below `/etc/aegis-test` inside the `falco-runtime-test-active` Pod. This was not a write to the Kubernetes node's host `/etc`. The rule was updated to match the active test Pod while preserving the original test Pod match. The reviewed rule source is stored at `falco/aegis-runtime-write.yaml`.
+2. The Kali forwarder appended Falco JSON to `/var/log/aegis/falco-events.jsonl`.
+3. The Wazuh agent `kali-aegis-lab` monitored that file using JSON log collection and forwarded the event to the manager.
+4. Wazuh manager rule `100501`, level `8`, matched the event and generated an alert in `/var/ossec/logs/alerts/alerts.json`. The alert's source location was `/var/log/aegis/falco-events.jsonl`.
+
+### Fresh verification result (17 October 2026)
+
+The latest controlled write event was observed in the manager alert output:
+
+- Falco event timestamp: `2026-10-17T10:18:02.097373391Z`
+- Wazuh manager alert timestamp: `2026-10-17T10:18:02.871+0000`
+- Calculated event-to-alert timestamp difference: `773.626609 ms` (approximately `774 ms`)
+- Wazuh rule: `100501`, level `8`
+- File: `/etc/aegis-test/runtime-proof.txt`
+- Pod/namespace: `falco-runtime-test-active` / `aegis-policy-test`
+- Runtime UID: `65532`
+
+This is one successful observed event, not a latency benchmark or guarantee. Sanitized normalized excerpts from the actual collector query and manager alert query are stored at `evidence/wazuh-integration/falco-event-sanitized.json` and `evidence/wazuh-integration/wazuh-alert-sanitized.json`. Raw host logs and unrelated container identifiers are not committed.
+
+The tested deployment used Wazuh `4.14.9-1` on the Ubuntu manager and the Kali agent. The two controlled events demonstrate end-to-end ingestion and manager rule matching for the specific filesystem-write and interactive-shell detections. They do not establish comprehensive runtime coverage or production alerting readiness.
+
+### Fresh shell-event verification (17 October 2026)
+
+A controlled shell event was generated in `falco-runtime-test-active` using marker `aegis-shell-validation-20261017-02`.
+
+- Falco event timestamp: `2026-10-17T10:37:45.756102876Z`
+- Falco rule: `Terminal shell in container`, priority `Notice`
+- Collector: the event was recorded in `/var/log/aegis/falco-events.jsonl`
+- Wazuh manager alert timestamp: `2026-10-17T10:37:46.008+0000`
+- Wazuh rule: `100502`, level `7`
+- Agent: `kali-aegis-lab`
+- Runtime UID: `65532`
+- Observed event-to-alert timestamp difference: approximately `251.897 ms`
+
+This is one event-timestamp comparison, not a latency benchmark or guarantee. Sanitized normalized excerpts are committed as `evidence/wazuh-integration/shell-event-sanitized.json` and `evidence/wazuh-integration/shell-alert-sanitized.json`.
+
+### Remaining SIEM validation
+
+- **Indexer/dashboard visibility:** not yet verified. Manager-side connector logs included warnings about missing keystore credentials and retries for `wazuh-states-*`; these warnings did not prevent the confirmed manager alerts, but indexing and dashboard presentation still need separate validation.
+- **Evidence packaging:** sanitized collector-event and manager-alert excerpts for both controlled detections are committed. UTC clock state, service/configuration captures, JSONL validation counts, and the final checksum manifest still need to be captured and reviewed before the portfolio evidence package is complete.
+
+The custom Falco rule source is stored in `falco/aegis-runtime-write.yaml`. The live ConfigMap was patched for this validation; the repository rule file is the reviewed source to carry forward into the managed deployment configuration. The capture procedure and evidence boundary are documented in `evidence/wazuh-integration/README.md`.
 
 ## Gatekeeper admission enforcement validation
 
@@ -107,10 +150,10 @@ Detailed artifacts and checksums are in
 
 ## Next steps
 
-1. Provision a host with sufficient memory and disk capacity for the selected Wazuh deployment.
-2. Configure ingestion of Falco runtime alerts and relevant Kubernetes audit or admission-denial evidence.
-3. Verify a controlled shell event and filesystem-write event arrive in the SIEM with useful Kubernetes metadata.
-4. Validate alert rules and correlation, then tune confirmed benign noise.
+1. Capture UTC clock state, service/configuration checks, JSONL validation counts, and final checksums for both event paths. Sanitized collector and manager excerpts are recorded in `evidence/wazuh-integration/`.
+2. Validate Wazuh indexer and dashboard visibility; investigate the recorded connector warnings without disturbing the working manager alert path.
+3. Tune only confirmed benign noise and preserve before/after evidence for every rule change.
+4. Safely validate Gatekeeper audit discovery of a pre-existing noncompliant object before claiming that capability is demonstrated.
 5. Reassess the Gatekeeper and PSS overlap before expanding enforcement scope.
 
-**Completion statement:** Falco runtime detections and isolated native PSS admission tests were demonstrated. Aegis Phase 3 is not fully complete until SIEM ingestion and end-to-end correlation are verified.
+**Completion statement:** Falco runtime detections, isolated native PSS admission tests, Gatekeeper admission enforcement, and Wazuh ingestion/rule matching for controlled filesystem-write and interactive-shell events have been demonstrated. Phase 3 remains in validation until the final evidence package is completed, indexer/dashboard visibility is checked, and the documented Gatekeeper audit limitation is addressed.
