@@ -17,7 +17,7 @@ This is evidence of ingestion and manager rule matching for the specific control
 
 A single manager alert was observed at `2026-10-17T10:18:02.871+0000` for a Falco event timestamped `2026-10-17T10:18:02.097373391Z`, a difference of `773.626609 ms` (approximately `774 ms`). This is one event-timestamp comparison, not a latency benchmark; capture both hosts' UTC clock state before making broader timing claims.
 
-Not yet verified: forwarding of a controlled shell event, Wazuh indexer ingestion, and dashboard visibility. A sanitized normalized manager-alert excerpt is committed as `wazuh-alert-sanitized.json`; the collector-side event excerpt, relevant service/configuration captures, and final checksum manifest remain to be added.
+Sanitized normalized excerpts from the actual collector query and manager alert query are committed as `falco-event-sanitized.json` and `wazuh-alert-sanitized.json`. Not yet verified: forwarding of a controlled shell event, Wazuh indexer ingestion, and dashboard visibility. UTC clock state, service/configuration captures, JSONL validation counts, and the final checksum manifest remain to be added.
 
 ## Evidence capture checklist
 
@@ -99,7 +99,7 @@ The alert file is newline-delimited JSON, so `jq` can process each alert record.
 Use only after creating the corresponding real artifacts:
 
 - `kali-clock-and-service-status.txt`
-- `falco-event-sanitized.json`
+- `falco-event-sanitized.json` (captured and committed)
 - `wazuh-agent-config-sanitized.xml`
 - `manager-clock-and-analysis-check.txt`
 - `wazuh-alert-sanitized.json`
