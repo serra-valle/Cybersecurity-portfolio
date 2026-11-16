@@ -4,24 +4,27 @@ This matrix defines the expected evidence. A source file, unit test, CI workflow
 
 | ID | Requirement | Positive condition | Negative condition | Current evidence state |
 |---|---|---|---|---|
-| AR-01 | Webhook authentication | Valid HMAC and current timestamp accepted | Missing, stale or tampered signature rejected | Unit tests passed in CI |
+| AR-01 | Webhook authentication | Valid HMAC and current timestamp accepted | Missing, stale or tampered signature rejected | Unit tests passed in CI run 43828411989 |
 | AR-02 | Alert allowlisting | Agent \`kali-aegis-lab\`, rule 100501/100502 and approved namespace accepted | Other agent, rule or namespace ignored | Source implementation present; endpoint integration test pending |
-| AR-03 | Quarantine preconditions | Explicit response-target Pod and verified deny-all NetworkPolicy | Missing policy, wrong selector, missing policy type or unattested dataplane blocks mutation | Mocked response tests passed in CI; live test pending |
-| AR-04 | Pod quarantine | Quarantine label and audit annotations applied | Unlabelled Pod remains unchanged | Mocked response test passed in CI; live test pending |
+| AR-03 | Quarantine preconditions | Explicit response-target Pod and verified deny-all NetworkPolicy | Missing policy, wrong selector, missing policy type or unattested dataplane blocks mutation | Mocked response tests passed in CI run 43828411989; live test pending |
+| AR-04 | Pod quarantine | Quarantine label and audit annotations applied | Unlabelled Pod remains unchanged | Mocked response test passed in CI run 43828411989; live test pending |
 | AR-05 | Service endpoint exclusion | Endpoint label changes to false and configured Service selector removes the Pod | A Service without the required selector is not assumed to exclude the Pod | Code and selector contract present; EndpointSlice test pending |
 | AR-06 | Network isolation | Calico blocks ingress and egress to/from quarantined Pod | Any successful packet path fails acceptance | Not tested; attestation remains false |
-| AR-07 | High-risk eviction | Rule 100502 deletes an unmanaged target Pod with zero-second grace | Controller-managed Pod is quarantined and not deleted | Mocked response tests passed in CI; live test pending |
-| GT-01 | Gatekeeper audit export | Persisted container-security violations become JSONL events | Incomplete or malformed violation records are ignored | Normalization tests passed in CI; live API polling pending |
-| GT-02 | Gatekeeper image audit | Persisted image-integrity violations become JSONL events | Missing digest violation is not silently dropped | Normalization tests passed in CI; live API polling pending |
+| AR-07 | High-risk eviction | Rule 100502 deletes an unmanaged target Pod with zero-second grace | Controller-managed Pod is quarantined and not deleted | Mocked response tests passed in CI run 43828411989; live test pending |
+| GT-01 | Gatekeeper audit export | Persisted container-security violations become JSONL events | Incomplete or malformed violation records are ignored | Normalization tests passed in CI run 43828411989; live API polling pending |
+| GT-02 | Gatekeeper image audit | Persisted image-integrity violations become JSONL events | Missing digest violation is not silently dropped | Normalization tests passed in CI run 43828411989; live API polling pending |
 | WZ-01 | Wazuh rule 100503 | Active container-security violation creates manager alert | Resolved event does not trigger active-violation rule | Rule source present; manager analysis test pending |
 | WZ-02 | Wazuh rule 100504 | Active image-integrity violation creates manager alert | Resolved event does not trigger active-violation rule | Rule source present; manager analysis test pending |
-| PSS-01 | Unified positive Pod | Restricted PSS and both Gatekeeper constraints admit a secure, digest-pinned Pod | N/A | CI fixture and workflow authored; run pending |
-| PSS-02 | Native PSS denial | Restricted PSS rejects privileged Pod | Privileged Pod must not be admitted | CI fixture and workflow authored; run pending |
-| PSS-03 | Gatekeeper container security | PSS-compatible Pod with writable root filesystem is denied by Gatekeeper | Writable root filesystem must not be admitted | CI fixture and workflow authored; run pending |
-| PSS-04 | Gatekeeper image integrity | PSS-compatible image without explicit SHA-256 digest is denied | Tag-only image must not be admitted | CI fixture and workflow authored; run pending |
-| GI-01 | Falco rule validation | \`falco --validate <rules-file>\` accepts the Phase 4 write rule | Invalid rule syntax fails CI | Falco 0.45.0 validation passed in CI |
-| GI-02 | OPA regression | Existing Aegis Rego unit suite passes | Any regression fails CI | OPA 0.62.1 regression passed 10/10 |
+| PSS-01 | Unified positive Pod | Restricted PSS and both Gatekeeper constraints admit a secure, digest-pinned Pod | N/A | Passed in CI run 43828164005; follow-up run 43828411989 pending |
+| PSS-02 | Native PSS denial | Restricted PSS rejects privileged Pod | Privileged Pod must not be admitted | Passed in CI run 43828164005; follow-up run 43828411989 pending |
+| PSS-03 | Gatekeeper container security | PSS-compatible Pod with writable root filesystem is denied by Gatekeeper | Writable root filesystem must not be admitted | Passed in CI run 43828164005; follow-up run 43828411989 pending |
+| PSS-04 | Gatekeeper image integrity | PSS-compatible image without explicit SHA-256 digest is denied | Tag-only image must not be admitted | Passed in CI run 43828164005; follow-up run 43828411989 pending |
+| GI-01 | Falco rule validation | \`falco --validate <rules-file>\` accepts the Phase 4 write rule | Invalid rule syntax fails CI | Falco 0.45.0 validation passed in CI run 43828411989 |
+| GI-02 | OPA regression | Existing Aegis Rego unit suite passes | Any regression fails CI | OPA 0.62.1 regression passed 10/10 in CI run 43828411989 |
+| GI-03 | Deployment artifact validation | Python source compiles and Wazuh XML fragments parse | Syntax or XML errors fail CI | Passed in CI run 43828411989 |
 | EBPF-01 | Falco driver mode | Live Falco reports the intended eBPF driver and runtime events are captured | A different or unverified driver must not be described as eBPF | Not verified in Phase 4 |
+
+The positive Pod fixture uses a syntactically valid placeholder digest and is only submitted with Kubernetes server-side dry-run. It is not a pullable image and must not be deployed.
 
 ## Required live network-isolation procedure
 
