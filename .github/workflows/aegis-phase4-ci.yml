@@ -82,9 +82,7 @@ jobs:
             --entrypoint /usr/bin/falco \
             -v "$PWD/platform/falco/aegis-runtime-write.yaml:/etc/falco/rules.d/aegis-runtime-write.yaml:ro" \
             falcosecurity/falco:0.45.0 \
-            --validate \
-            -r /etc/falco/falco.yaml \
-            -r /etc/falco/rules.d/aegis-runtime-write.yaml
+            --validate /etc/falco/rules.d/aegis-runtime-write.yaml
 
       - name: Validate Kustomize build output
         working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops
