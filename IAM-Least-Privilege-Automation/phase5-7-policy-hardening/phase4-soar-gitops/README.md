@@ -2,7 +2,7 @@
 
 **Repository:** \`serra-valle/Cybersecurity-portfolio\`  
 **Delivery branch:** \`aegis-phase4-soar-gitops-20261112\`  
-**Status:** Source implementation and validation package prepared. Live deployment and runtime acceptance are not claimed.
+**Status:** Source implementation and CI validation package prepared. Live deployment and runtime acceptance are not claimed.
 
 ## Objective
 
@@ -65,9 +65,9 @@ The read-only exporter polls the two Aegis constraint kinds, normalizes \`status
 
 ## Validation boundary
 
-The GitHub Actions workflow is the automated validation path. Its results must be inspected after the pull request is opened; the workflow definition itself is not evidence of a passing run.
+[CI run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989) passed both automated validation jobs. It includes Python tests and syntax checks, XML parsing, OPA regression, Falco rule validation, Kustomize builds, and the PSS/Gatekeeper admission matrix in a disposable Kubernetes cluster.
 
-No Phase 4 live cluster deployment, Calico packet-isolation test, SOAR webhook execution, Wazuh Active Response execution, Gatekeeper-to-Wazuh ingestion, or containment log is represented as completed in this repository. No synthetic output is presented as live evidence.
+These are source and CI admission tests only. No Phase 4 live cluster deployment, Calico packet-isolation test, SOAR webhook execution, Wazuh Active Response execution, Gatekeeper-to-Wazuh ingestion, or containment log is represented as completed in this repository. No synthetic output is presented as live evidence.
 
 The Phase 4 Falco driver mode has not been reverified in a live cluster. Do not describe this delivery as an eBPF-validated containment path until the deployed Falco driver is captured and confirmed.
 

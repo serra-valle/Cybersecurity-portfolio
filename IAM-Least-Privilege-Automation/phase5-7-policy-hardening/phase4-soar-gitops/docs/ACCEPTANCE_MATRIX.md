@@ -15,10 +15,10 @@ This matrix defines the expected evidence. A source file, unit test, CI workflow
 | GT-02 | Gatekeeper image audit | Persisted image-integrity violations become JSONL events | Missing digest violation is not silently dropped | Normalization tests passed in CI run 43828411989; live API polling pending |
 | WZ-01 | Wazuh rule 100503 | Active container-security violation creates manager alert | Resolved event does not trigger active-violation rule | Rule source present; manager analysis test pending |
 | WZ-02 | Wazuh rule 100504 | Active image-integrity violation creates manager alert | Resolved event does not trigger active-violation rule | Rule source present; manager analysis test pending |
-| PSS-01 | Unified positive Pod | Restricted PSS and both Gatekeeper constraints admit a secure, digest-pinned Pod | N/A | Passed in CI run 43828164005; follow-up run 43828411989 pending |
-| PSS-02 | Native PSS denial | Restricted PSS rejects privileged Pod | Privileged Pod must not be admitted | Passed in CI run 43828164005; follow-up run 43828411989 pending |
-| PSS-03 | Gatekeeper container security | PSS-compatible Pod with writable root filesystem is denied by Gatekeeper | Writable root filesystem must not be admitted | Passed in CI run 43828164005; follow-up run 43828411989 pending |
-| PSS-04 | Gatekeeper image integrity | PSS-compatible image without explicit SHA-256 digest is denied | Tag-only image must not be admitted | Passed in CI run 43828164005; follow-up run 43828411989 pending |
+| PSS-01 | Unified positive Pod | Restricted PSS and both Gatekeeper constraints admit a secure, digest-pinned Pod | N/A | Passed in CI run 43828411989 |
+| PSS-02 | Native PSS denial | Restricted PSS rejects privileged Pod | Privileged Pod must not be admitted | Passed in CI run 43828411989 |
+| PSS-03 | Gatekeeper container security | PSS-compatible Pod with writable root filesystem is denied by Gatekeeper | Writable root filesystem must not be admitted | Passed in CI run 43828411989 |
+| PSS-04 | Gatekeeper image integrity | PSS-compatible image without explicit SHA-256 digest is denied | Tag-only image must not be admitted | Passed in CI run 43828411989 |
 | GI-01 | Falco rule validation | \`falco --validate <rules-file>\` accepts the Phase 4 write rule | Invalid rule syntax fails CI | Falco 0.45.0 validation passed in CI run 43828411989 |
 | GI-02 | OPA regression | Existing Aegis Rego unit suite passes | Any regression fails CI | OPA 0.62.1 regression passed 10/10 in CI run 43828411989 |
 | GI-03 | Deployment artifact validation | Python source compiles and Wazuh XML fragments parse | Syntax or XML errors fail CI | Passed in CI run 43828411989 |
