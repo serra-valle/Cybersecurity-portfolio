@@ -21,13 +21,11 @@ def _policy_is_default_deny(policy: Any, settings: Settings) -> bool:
     selector = getattr(spec, "pod_selector", None)
     labels = getattr(selector, "match_labels", None) or {}
     policy_types = set(getattr(spec, "policy_types", None) or [])
-
     ingress = getattr(spec, "ingress", None) or []
     egress = getattr(spec, "egress", None) or []
 
     return (
-        labels.get(settings.quarantine_label_key)
-        == settings.quarantine_label_value
+        labels.get(settings.quarantine_label_key) == settings.quarantine_label_value
         and {"Ingress", "Egress"}.issubset(policy_types)
         and len(ingress) == 0
         and len(egress) == 0
@@ -80,9 +78,43 @@ def quarantine_pod(
     annotations = dict(metadata.annotations or {})
 
     if labels.get(settings.target_label_key) != settings.target_label_value:
-        return {"status": "ignored", "reason": "pod_not_an_approved_response_target"}
+        return {
+            "status": "ignored",
+            "reason": "pod_not_an_approved_response_target",
+        }
 
-    if labels.get(settings.quarantine_label_key) == settings.quarantine_label_value:
+    owner_references = metadata.owner_references or []
+    is_high_risk = event.rule_id in settings.evict_rule_ids
+    already_quarantined = (
+        labels.get(settings.quarantine_label_key) == settings.quarantine_label_value
+    )
+
+    if already_quarantined:
+        # Repair endpoint eligibility if an earlier partial update left it enabled.
+        if labels.get(settings.endpoint_label_key) != settings.endpoint_disabled_value:
+            labels[settings.endpoint_label_key] = settings.endpoint_disabled_value
+            core_api.patch_namespaced_pod(
+                name=event.pod_name,
+                namespace=event.namespace,
+                body={
+                    "metadata": {
+                        "resourceVersion": metadata.resource_version,
+                        "labels": labels,
+                    }
+                },
+                _content_type="application/merge-patch+json",
+            )
+
+        # A previous request may have patched quarantine successfully but lost
+        # the delete response. Retry high-risk unmanaged-Pod eviction safely.
+        if is_high_risk and settings.delete_unmanaged_pods and not owner_references:
+            core_api.delete_namespaced_pod(
+                name=event.pod_name,
+                namespace=event.namespace,
+                grace_period_seconds=0,
+                propagation_policy="Background",
+            )
+            return {"status": "evicted", "reason": "high_risk_unmanaged_pod"}
         return {"status": "already_quarantined", "reason": "idempotent_noop"}
 
     quarantined_at = datetime.now(timezone.utc).isoformat()
@@ -90,38 +122,49 @@ def quarantine_pod(
         "aegis.security/quarantine-event-id": event.event_id[:128],
         "aegis.security/quarantine-rule-id": event.rule_id,
         "aegis.security/quarantined-at": quarantined_at,
-        "aegis.security/quarantine-source-agent": "kali-aegis-lab",
+        "aegis.security/quarantine-source-agent": settings.allowed_agent,
     })
     labels[settings.quarantine_label_key] = settings.quarantine_label_value
+    # Target Services must select endpoint-enabled=true. This label change
+    # removes the Pod from those EndpointSlices; NetworkPolicy remains the
+    # actual ingress/egress isolation control.
+    labels[settings.endpoint_label_key] = settings.endpoint_disabled_value
 
-    patch = {
-        "metadata": {
-            "resourceVersion": metadata.resource_version,
-            "labels": labels,
-            "annotations": annotations,
-        }
-    }
     core_api.patch_namespaced_pod(
         name=event.pod_name,
         namespace=event.namespace,
-        body=patch,
+        body={
+            "metadata": {
+                "resourceVersion": metadata.resource_version,
+                "labels": labels,
+                "annotations": annotations,
+            }
+        },
         _content_type="application/merge-patch+json",
     )
 
-    owner_references = metadata.owner_references or []
-    if settings.delete_unmanaged_pods and not owner_references:
+    if is_high_risk and settings.delete_unmanaged_pods and not owner_references:
+        # Immediate eviction is deliberately limited to unmanaged Pods.
+        # Deleting a controller-owned Pod without changing its template can
+        # cause an unquarantined replacement to be created.
         core_api.delete_namespaced_pod(
             name=event.pod_name,
             namespace=event.namespace,
-            grace_period_seconds=30,
+            grace_period_seconds=0,
             propagation_policy="Background",
         )
-        return {"status": "quarantined_and_deleted", "reason": "unmanaged_pod"}
+        return {"status": "evicted", "reason": "high_risk_unmanaged_pod"}
 
     if owner_references:
         return {
             "status": "quarantined",
             "reason": "controller_managed_pod_preserved",
+        }
+
+    if is_high_risk and not settings.delete_unmanaged_pods:
+        return {
+            "status": "quarantined",
+            "reason": "eviction_disabled_by_configuration",
         }
 
     return {"status": "quarantined", "reason": "network_policy_selected"}

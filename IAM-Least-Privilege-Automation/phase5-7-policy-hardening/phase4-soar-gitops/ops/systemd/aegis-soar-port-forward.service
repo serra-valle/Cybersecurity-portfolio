@@ -1,0 +1,14 @@
+[Unit]
+Description=Aegis SOAR Kubernetes port-forward on the Phase 4 Kind cluster
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=KUBECONFIG=%h/.kube/config
+ExecStart=/usr/bin/kubectl --context kind-aegis-phase4-lab --namespace aegis-soar-system port-forward --address 127.0.0.1 deployment/aegis-soar 18081:8080
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

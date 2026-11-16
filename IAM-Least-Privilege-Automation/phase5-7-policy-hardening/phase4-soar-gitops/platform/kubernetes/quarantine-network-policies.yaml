@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aegis-quarantine-default-deny
+  namespace: aegis-policy-test
+spec:
+  podSelector:
+    matchLabels:
+      aegis.security/status: quarantined
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress: []
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aegis-quarantine-default-deny
+  namespace: aegis-unified-policy
+spec:
+  podSelector:
+    matchLabels:
+      aegis.security/status: quarantined
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress: []

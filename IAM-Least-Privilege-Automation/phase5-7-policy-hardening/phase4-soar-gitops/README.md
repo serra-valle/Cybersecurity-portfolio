@@ -1,139 +1,77 @@
 # Aegis Phase 4: SOAR Containment, Gatekeeper Audit Telemetry and GitOps
 
-**Delivery branch:** aegis-phase4-soar-gitops-20261112  
-**Implementation scope:** Phase 4 requirements from the 28 October 2026 technical handoff  
-**Status:** Implementation package prepared; live acceptance is not claimed
+**Repository:** \`serra-valle/Cybersecurity-portfolio\`  
+**Delivery branch:** \`aegis-phase4-soar-gitops-20261112\`  
+**Status:** Source implementation and validation package prepared. Live deployment and runtime acceptance are not claimed.
 
-## Purpose
+## Objective
 
-Phase 4 extends Aegis from preventive infrastructure and Kubernetes controls into controlled runtime response and policy-violation telemetry. It adds an authenticated Wazuh-to-SOAR path, a fail-closed Kubernetes quarantine action, Gatekeeper audit export to Wazuh, combined Pod Security Admission and Gatekeeper controls, and declarative deployment configuration.
+Phase 4 adds a controlled response path from the existing Falco/Wazuh detections to Kubernetes containment, exports persisted Gatekeeper audit violations to Wazuh, and defines a unified namespace where Kubernetes Pod Security Admission (PSS) and the existing Aegis Gatekeeper controls operate together.
 
-The package is deliberately separate from the older Terraform/OPA project at IAM-Least-Privilege-Automation/project-aegis-phase4/. That directory is not modified.
+This package is separate from the older \`IAM-Least-Privilege-Automation/project-aegis-phase4/\` project. That directory is not changed.
 
 ## Architecture
 
-~~~text
-Falco event in an approved workload
-        |
-        v
-Wazuh agent on Kali
-        |
-        v
-Wazuh Manager on AWS
-  rules 100501 / 100502
-        |
-        v
-Wazuh custom integration
-  durable local alert spool
-        |
-        v
-Dispatcher + HMAC-SHA256
-        |
-        v
-AWS loopback port 18080
-        |
-        | SSH reverse tunnel initiated from Kali
-        v
-Kali loopback port 18081
-        |
-        | kubectl port-forward
-        v
-Aegis SOAR Service in aegis-soar-system
-        |
-        | dedicated Kubernetes ServiceAccount
-        v
-Approved Pod in aegis-policy-test or aegis-unified-policy
-        |
-        +--> verify target label and quarantine NetworkPolicy
-        +--> apply quarantine label and audit annotations
-        +--> optional deletion of unmanaged Pods only
-~~~
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data-flow diagram and [docs/DEPLOYMENT_RUNBOOK.md](docs/DEPLOYMENT_RUNBOOK.md) for deployment steps.
 
-Gatekeeper audit telemetry is a separate read-only path:
+### Runtime response path
 
-~~~text
-Gatekeeper Constraint status.violations
-        |
-        v
-Read-only audit exporter on Kali
-        |
-        v
-/var/log/aegis/gatekeeper-audit.jsonl
-        |
-        v
-Wazuh agent JSON localfile collection
-        |
-        v
-Wazuh rules 100503 / 100504
-~~~
+1. Falco emits the existing Aegis filesystem-write rule (100501) or the built-in \`Terminal shell in container\` event (100502).
+2. Wazuh Manager Active Response receives only rules 100501 and 100502.
+3. The Active Response script accepts only agent \`kali-aegis-lab\`, allowlisted rule IDs and the \`add\` command, then writes the alert to a durable local spool.
+4. A systemd timer retries delivery. The dispatcher signs the exact JSON body with HMAC-SHA256 and posts it to the manager's loopback endpoint.
+5. A reverse SSH tunnel from Kali exposes the manager's loopback port to a Kali-local port-forward into the Phase 4 SOAR Deployment.
+6. The FastAPI service verifies the signature, agent, rule ID and namespace before calling the Kubernetes API.
 
-## Security invariants
+The service fails closed unless the named quarantine NetworkPolicy exists, selects \`aegis.security/status=quarantined\`, has both Ingress and Egress policy types, and contains no allow rules. The dataplane-attestation setting is false by default and must remain false until traffic isolation has been tested.
 
-1. The SOAR endpoint accepts only HMAC-authenticated requests with a bounded timestamp window.
-2. Only Wazuh agent kali-aegis-lab and rule IDs 100501/100502 are eligible for response.
-3. Only namespaces explicitly listed in configuration are eligible.
-4. A Pod must carry the exact label aegis.security/response-target=true before it can be quarantined.
-5. The named quarantine NetworkPolicy must exist and have an empty ingress and egress rule set, selecting aegis.security/status=quarantined.
-6. The service refuses to mutate a Pod unless AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED is true. This setting must remain false until Calico dataplane isolation has been demonstrated in the target cluster.
-7. Deletion is disabled by default. If explicitly enabled, only unmanaged Pods with no owner references can be deleted. Controller-managed Pods remain quarantined and are not deleted, preventing immediate controller recreation from bypassing containment.
-8. The SOAR service has namespace-scoped Pod permissions only. The Gatekeeper audit reader has read-only access to the two Aegis constraint kinds.
-9. The manager-side integration uses a durable queue. Temporary tunnel or service outages do not silently discard an alert.
-10. Secrets, kubeconfig tokens, raw alerts and private host data are not committed.
+### Containment actions
+
+- **Rule 100501:** quarantine the explicitly labelled response-target Pod.
+- **Rule 100502:** quarantine the explicitly labelled response-target Pod. If configured for eviction, the service immediately deletes an unmanaged target Pod with \`grace_period_seconds=0\`.
+- Controller-managed Pods are quarantined but not deleted. Deleting a controller-owned Pod without changing its workload template can create a replacement that is not quarantined.
+- Quarantine also changes \`aegis.security/endpoint-enabled\` to \`false\`. Target Services must include \`aegis.security/endpoint-enabled: "true"\` in their selectors to remove quarantined Pods from their EndpointSlices. NetworkPolicy is the actual ingress/egress isolation control; a label change alone is not isolation.
+
+### Gatekeeper audit path
+
+The read-only exporter polls the two Aegis constraint kinds, normalizes \`status.violations\`, writes JSONL records, and emits a resolution record when a previously observed violation disappears. Wazuh agent JSON collection forwards the records to Manager rules 100503 and 100504.
 
 ## Repository layout
 
-- app/aegis_soar/: FastAPI webhook, HMAC verification, alert normalization and Kubernetes response logic.
-- app/tests/: unit tests for signature verification and Wazuh/Falco event normalization.
-- platform/kubernetes/: namespaces, combined Gatekeeper constraints, quarantine policies, service account/RBAC and SOAR Deployment.
-- platform/kubernetes/audit-test/: isolated dry-run constraints and a persisted audit fixture. It is not part of the production Kustomize base.
-- collectors/: Gatekeeper constraint-status exporter and systemd unit.
-- wazuh/: Gatekeeper rules, localfile stanza and manager-side durable integration spool/dispatcher.
-- ops/systemd/: Kali port-forward and SSH reverse-tunnel units.
-- ops/scripts/: response-target labeling and restricted audit-token bootstrap helpers.
-- docs/: acceptance matrix and delivery status.
+- \`app/aegis_soar/\`: authenticated FastAPI webhook, alert normalizer, settings and Kubernetes response logic.
+- \`app/tests/\`: signature, normalization and mocked Kubernetes response tests.
+- \`collectors/\`: read-only Gatekeeper audit exporter and unit tests.
+- \`platform/kubernetes/\`: namespaces, PSS labels, unified Gatekeeper constraints, quarantine NetworkPolicies, RBAC and SOAR Deployment.
+- \`platform/kubernetes/unified-policy-test/\`: positive and negative admission fixtures.
+- \`platform/falco/\`: Phase 4 Falco rule source and ConfigMap generator.
+- \`wazuh/active-response/\`: durable Active Response enqueue and HMAC dispatcher.
+- \`wazuh/manager/\`: Active Response configuration fragment and Gatekeeper rules 100503/100504.
+- \`wazuh/agent/\`: JSON localfile collection fragment.
+- \`wazuh/systemd/\`: manager-side retry service and timer.
+- \`ops/systemd/\`: Kali port-forward, reverse tunnel and audit-exporter service units.
+- \`docs/\`: architecture, acceptance matrix, deployment runbook and status record.
+- \`.github/workflows/aegis-phase4-ci.yml\`: Python tests, OPA regression, Falco rule validation and PSS/Gatekeeper admission tests.
 
-## Deployment dependencies
+## Important deployment gates
 
-The intended target is the dedicated Phase 4 Kind cluster, context kind-aegis-phase4-lab. The existing handoff records Calico 3.33.0 in that cluster. The Phase 3 cluster, kind-aegis-policy-lab, must not be repurposed or have its CNI changed as part of this deployment.
-
-The target cluster must have:
-- Kubernetes 1.33.x or compatible.
-- Calico or another NetworkPolicy-enforcing CNI, with dataplane behavior verified.
-- Gatekeeper 3.23.1.
-- The existing Aegis ConstraintTemplates from phase2-advanced/kubernetes/gatekeeper/.
-- Aegis Wazuh manager rules 100501 and 100502 already installed.
-- A Wazuh Manager reachable from Kali over the existing SSH path.
-
-The SOAR image must be built and published before applying the Deployment. The image reference in the manifest is a release tag placeholder until the built image digest is recorded. Before production use, replace the tag with the exact immutable digest produced by the release build.
-
-## Apply order
-
-1. Review docs/DELIVERY_STATUS.md and docs/ACCEPTANCE_MATRIX.md.
-2. Build and publish the SOAR image. Record its immutable digest and update the Deployment image reference.
-3. Apply the existing Phase 2 ConstraintTemplates from the canonical source directory.
-4. Apply the Phase 4 production Kustomize base.
-5. Provision the HMAC secret outside Git and install the same secret on the Wazuh Manager.
-6. Install the Kali port-forward and reverse-tunnel units, then the manager-side spool dispatcher.
-7. Install the read-only Gatekeeper audit-reader token and start the exporter.
-8. Keep AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=false until the acceptance criteria for both permitted and denied traffic are completed. Do not enable automated containment before that gate.
-9. Run the acceptance matrix in a controlled lab window, capture raw outputs, sanitize them, and add checksums.
-
-The package does not include credentials or apply itself to either cluster.
-
-## Falco declarative parity
-
-The canonical custom Falco rule remains in phase3-runtime-detection/falco/aegis-runtime-write.yaml. It is extended to cover the Phase 4 response target while preserving the original Phase 3 test-pod match. The live Helm release must be upgraded with the existing values retained. Do not replace the current Helm values file with a partial overlay.
-
-For Helm chart 9.2.0, merge the reviewed rule into the chart customRules value using the file as the source. Review the rendered manifest before applying it. The prior handoff recorded live-versus-Helm drift; this source update alone does not prove that the live ConfigMap has been reconciled.
+1. The image reference in \`platform/kubernetes/soar-deployment.yaml\` is a placeholder. Build and publish the image, then replace it with the immutable GHCR digest before deployment.
+2. Create the HMAC secret outside Git. The same high-entropy secret must be installed on Wazuh Manager and mounted into the SOAR Deployment.
+3. Apply the existing Phase 2 ConstraintTemplates before the Phase 4 constraints.
+4. Keep \`AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=false\` until both ingress and egress denial are demonstrated against quarantined Pods in the target Calico dataplane.
+5. Configure target application Services to select \`aegis.security/endpoint-enabled: "true"\` and verify EndpointSlice removal.
+6. Falco's ConfigMap is source-controlled, but applying it does not automatically reconcile an existing Helm DaemonSet. Merge the ConfigMap data into the current chart configuration and preserve all existing Helm values. Do not load a second copy of the Phase 3 write rule alongside the existing rule.
+7. Confirm Wazuh rule IDs 100503 and 100504 are unused before installing the Gatekeeper rules file.
 
 ## Validation boundary
 
-No Phase 4 live cluster, Wazuh integration, network-isolation or SOAR execution test is represented as completed by this delivery. Unit tests, acceptance manifests and CI validation are included as implementation artifacts. A manifest existing in Git is not proof that the cluster enforces it. A successful API response is not proof that packets are blocked.
+The GitHub Actions workflow is the intended automated validation path. Its results must be inspected after the pull request is opened; the workflow definition itself is not evidence of a passing run.
 
-The existing Phase 3 observations remain the baseline:
-- Wazuh rule 100501 matched one controlled filesystem-write event.
-- Wazuh rule 100502 matched one controlled interactive-shell event.
-- Their observed event-to-alert timestamp differences were approximately 774 ms and 252 ms respectively. These are individual observations, not a latency benchmark.
-- Phase 3 Wazuh indexer/dashboard visibility and final evidence-integrity items remain outstanding in the prior handoff.
+No Phase 4 live cluster deployment, Calico packet-isolation test, SOAR webhook execution, Wazuh Active Response execution, Gatekeeper-to-Wazuh ingestion, or containment log is represented as completed in this repository. No synthetic output is presented as live evidence.
 
-See docs/DELIVERY_STATUS.md for the exact status and docs/ACCEPTANCE_MATRIX.md for the release gates.
+The earlier Phase 3 observations remain limited to the specific controlled events recorded in \`phase3-runtime-detection/evidence/wazuh-integration/\`. They are not Phase 4 containment evidence.
+
+See:
+- [Architecture](docs/ARCHITECTURE.md)
+- [Acceptance matrix](docs/ACCEPTANCE_MATRIX.md)
+- [Deployment runbook](docs/DEPLOYMENT_RUNBOOK.md)
+- [Delivery status](docs/DELIVERY_STATUS.md)

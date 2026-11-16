@@ -1,0 +1,224 @@
+name: Aegis Phase 4 Validation
+
+on:
+  pull_request:
+    branches:
+      - aegis-phase3-wazuh-integration-20261016
+    paths:
+      - "IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops/**"
+      - ".github/workflows/aegis-phase4-ci.yml"
+  push:
+    branches:
+      - aegis-phase4-soar-gitops-20261112
+    paths:
+      - "IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops/**"
+      - ".github/workflows/aegis-phase4-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  source-validation:
+    name: Python, OPA and Falco validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install kubectl for Kustomize validation
+        run: |
+          set -euo pipefail
+          curl -fsSLO https://dl.k8s.io/release/v1.33.4/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+          kubectl version --client
+
+      - name: Install Python dependencies
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -r app/requirements.txt -r collectors/requirements.txt
+
+      - name: Run SOAR and collector unit tests
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops
+        env:
+          PYTHONPATH: app:.
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s app/tests -v
+          python -m unittest discover -s collectors/tests -v
+
+      - name: Install OPA 0.62.1
+        run: |
+          set -euo pipefail
+          curl -fsSL https://openpolicyagent.org/downloads/v0.62.1/opa_linux_amd64_static -o opa
+          chmod +x opa
+          sudo mv opa /usr/local/bin/opa
+          opa version
+
+      - name: Run Aegis Rego regression
+        run: |
+          set -euo pipefail
+          POLICY_DIR=IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+          opa test -v \
+            "$POLICY_DIR/aegis_guardrail_v8.rego" \
+            "$POLICY_DIR/aegis_guardrail_v8_test.rego"
+
+      - name: Validate Phase 4 Falco rule
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            --entrypoint /usr/bin/falco \
+            -v "$PWD/platform/falco/aegis-runtime-write.yaml:/etc/falco/rules.d/aegis-runtime-write.yaml:ro" \
+            falcosecurity/falco:0.45.0 \
+            --validate \
+            -r /etc/falco/falco.yaml \
+            -r /etc/falco/rules.d/aegis-runtime-write.yaml
+
+      - name: Validate Kustomize build output
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops
+        run: |
+          set -euo pipefail
+          kubectl kustomize platform/kubernetes >/tmp/aegis-phase4-kustomize.yaml
+          kubectl kustomize platform/falco >/tmp/aegis-phase4-falco-configmap.yaml
+          test -s /tmp/aegis-phase4-kustomize.yaml
+          test -s /tmp/aegis-phase4-falco-configmap.yaml
+
+  unified-pss-gatekeeper:
+    name: Unified PSS and Gatekeeper admission matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install kubectl 1.33.4
+        run: |
+          set -euo pipefail
+          curl -fsSLO https://dl.k8s.io/release/v1.33.4/bin/linux/amd64/kubectl
+          curl -fsSLO https://dl.k8s.io/release/v1.33.4/bin/linux/amd64/kubectl.sha256
+          echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+          kubectl version --client
+
+      - name: Install Kind 0.33.0
+        run: |
+          set -euo pipefail
+          curl -fsSL https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64 -o kind
+          chmod +x kind
+          sudo mv kind /usr/local/bin/kind
+          kind version
+
+      - name: Create disposable Kubernetes 1.33.12 cluster
+        run: |
+          set -euo pipefail
+          kind create cluster \
+            --name aegis-phase4-ci \
+            --image kindest/node:v1.33.12@sha256:3f5c8443c620245e4d355cfe09e96a91ead32ceaa569d3f1ca9edf0cb2fe2ff4 \
+            --wait 5m
+          kubectl get nodes -o wide
+
+      - name: Install Gatekeeper 3.23.1
+        run: |
+          set -euo pipefail
+          kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/v3.23.1/deploy/gatekeeper.yaml
+          kubectl wait \
+            --for=condition=Available \
+            deployment/gatekeeper-controller-manager \
+            -n gatekeeper-system \
+            --timeout=180s
+
+      - name: Apply Phase 2 templates and Phase 4 unified constraints
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening
+        run: |
+          set -euo pipefail
+          PHASE2=phase2-advanced/kubernetes/gatekeeper
+          PHASE4=phase4-soar-gitops/platform/kubernetes
+
+          kubectl apply -f "$PHASE4/namespaces.yaml"
+          kubectl apply -f "$PHASE2/container-security-template.yaml"
+          kubectl apply -f "$PHASE2/image-integrity-template.yaml"
+
+          kubectl wait --for=condition=Established \
+            crd/k8saegiscontainersecurity.constraints.gatekeeper.sh --timeout=120s
+          kubectl wait --for=condition=Established \
+            crd/k8saegisimageintegrity.constraints.gatekeeper.sh --timeout=120s
+
+          kubectl apply -f "$PHASE4/unified-gatekeeper-constraints.yaml"
+          sleep 8
+          kubectl get k8saegiscontainersecurity,k8saegisimageintegrity
+
+      - name: Secure Pod must pass both controls
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops
+        run: |
+          set -euo pipefail
+          kubectl apply --dry-run=server \
+            -f platform/kubernetes/unified-policy-test/positive-pod.yaml
+
+      - name: Native PSS must reject privileged Pod
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops
+        run: |
+          set -euo pipefail
+          set +e
+          output=$(kubectl apply --dry-run=server \
+            -f platform/kubernetes/unified-policy-test/negative-pss-privileged.yaml 2>&1)
+          rc=$?
+          set -e
+          echo "$output"
+          if [ "$rc" -eq 0 ] || ! echo "$output" | grep -Fq "violates PodSecurity"; then
+            echo "ERROR: restricted PSS did not reject the privileged Pod."
+            exit 1
+          fi
+
+      - name: Gatekeeper must reject writable root filesystem
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops
+        run: |
+          set -euo pipefail
+          set +e
+          output=$(kubectl apply --dry-run=server \
+            -f platform/kubernetes/unified-policy-test/negative-gatekeeper-readonly.yaml 2>&1)
+          rc=$?
+          set -e
+          echo "$output"
+          if [ "$rc" -eq 0 ] || ! echo "$output" | grep -Fq "readOnlyRootFilesystem=true"; then
+            echo "ERROR: Gatekeeper did not reject writable root filesystem."
+            exit 1
+          fi
+
+      - name: Gatekeeper must reject image without SHA-256 digest
+        working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops
+        run: |
+          set -euo pipefail
+          set +e
+          output=$(kubectl apply --dry-run=server \
+            -f platform/kubernetes/unified-policy-test/negative-gatekeeper-image.yaml 2>&1)
+          rc=$?
+          set -e
+          echo "$output"
+          if [ "$rc" -eq 0 ] || ! echo "$output" | grep -Fq "explicit sha256 digest"; then
+            echo "ERROR: Gatekeeper did not reject the tag-only image."
+            exit 1
+          fi
+
+      - name: Kubernetes diagnostics
+        if: failure()
+        run: |
+          kubectl get nodes -o wide || true
+          kubectl get pods -n gatekeeper-system -o wide || true
+          kubectl get constrainttemplates || true
+          kubectl get k8saegiscontainersecurity,k8saegisimageintegrity -o yaml || true

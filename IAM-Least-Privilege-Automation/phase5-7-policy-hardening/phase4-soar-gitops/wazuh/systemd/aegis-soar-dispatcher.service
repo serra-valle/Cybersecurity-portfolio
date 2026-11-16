@@ -1,0 +1,14 @@
+[Unit]
+Description=Aegis SOAR durable Wazuh alert dispatcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=wazuh
+UMask=0027
+Environment=AEGIS_SOAR_SPOOL_ROOT=/var/ossec/queue/aegis-soar
+Environment=AEGIS_SOAR_HMAC_SECRET_FILE=/etc/aegis-soar/hmac.key
+Environment=AEGIS_SOAR_WEBHOOK_URL=http://127.0.0.1:18080/v1/alerts
+ExecStart=/usr/bin/python3 /var/ossec/integrations/aegis-soar-dispatcher.py

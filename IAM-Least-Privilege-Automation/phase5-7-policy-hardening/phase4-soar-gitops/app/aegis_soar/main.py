@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-from contextlib import suppress
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
@@ -14,10 +13,7 @@ from .normalizer import InvalidAlert, normalize_alert
 from .response import ResponseBlocked, quarantine_pod
 from .security import SignatureError, verify_request
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(message)s",
-)
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("aegis-soar")
 
 
@@ -33,7 +29,7 @@ def create_app(
     active_settings = settings or Settings.from_env()
     app = FastAPI(
         title="Aegis SOAR",
-        version="1.0.0",
+        version="1.1.0",
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
@@ -72,7 +68,13 @@ def create_app(
 
     @app.post("/v1/alerts", status_code=202)
     async def ingest_alert(request: Request) -> dict[str, str]:
-        body = await request.body()
+        body_buffer = bytearray()
+        async for chunk in request.stream():
+            if len(body_buffer) + len(chunk) > active_settings.max_request_bytes:
+                raise HTTPException(status_code=413, detail="Request body is too large")
+            body_buffer.extend(chunk)
+        body = bytes(body_buffer)
+
         timestamp = request.headers.get("X-Aegis-Timestamp")
         signature = request.headers.get("X-Aegis-Signature")
 
@@ -81,8 +83,8 @@ def create_app(
         except OSError as exc:
             raise HTTPException(status_code=503, detail="HMAC secret is unavailable") from exc
 
-        if not secret:
-            raise HTTPException(status_code=503, detail="HMAC secret is empty")
+        if len(secret) < 32:
+            raise HTTPException(status_code=503, detail="HMAC secret must contain at least 32 bytes")
 
         try:
             verify_request(

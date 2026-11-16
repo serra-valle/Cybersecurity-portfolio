@@ -1,0 +1,15 @@
+[Unit]
+Description=Reverse SSH tunnel for Wazuh Manager to reach the local Aegis SOAR webhook
+After=network-online.target aegis-soar-port-forward.service
+Wants=network-online.target
+Requires=aegis-soar-port-forward.service
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/aegis-soar/tunnel.env
+ExecStart=/bin/sh -c 'exec /usr/bin/ssh -NT -i "$AEGIS_SSH_KEY" -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -R 127.0.0.1:18080:127.0.0.1:18081 "$AEGIS_WAZUH_MANAGER_USER@$AEGIS_WAZUH_MANAGER_HOST"'
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
