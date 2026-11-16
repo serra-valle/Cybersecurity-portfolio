@@ -2,7 +2,7 @@
 
 **Repository:** \`serra-valle/Cybersecurity-portfolio\`  
 **Delivery branch:** \`aegis-phase4-soar-gitops-20261112\`  
-**Status:** Source implementation and CI validation package prepared. Live deployment and runtime acceptance are not claimed.
+**Status:** Source implementation and validation package prepared. Live deployment and runtime acceptance are not claimed.
 
 ## Objective
 
@@ -12,7 +12,7 @@ This package is separate from the older \`IAM-Least-Privilege-Automation/project
 
 ## Architecture
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data-flow diagram and [docs/DEPLOYMENT_RUNBOOK.md](docs/DEPLOYMENT_RUNBOOK.md) for deployment steps.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data-flow diagram and [docs/DEPLOYMENT_RUNBOOK.md](docs/DEPLOYMENT_RUNBOOK.md) for deployment steps. The consolidated [Phase 4 submission report](docs/PHASE4_SUBMISSION_REPORT.md) records delivered work, CI evidence and outstanding live acceptance gates.
 
 ### Runtime response path
 
@@ -49,7 +49,7 @@ The read-only exporter polls the two Aegis constraint kinds, normalizes \`status
 - \`wazuh/agent/\`: JSON localfile collection fragment.
 - \`wazuh/systemd/\`: manager-side retry service and timer.
 - \`ops/systemd/\`: Kali port-forward, reverse tunnel and audit-exporter service units.
-- \`docs/\`: architecture, acceptance matrix, deployment runbook and status record.
+- \`docs/\`: architecture, acceptance matrix, deployment runbook, submission report and status record.
 - \`.github/workflows/aegis-phase4-ci.yml\`: Python tests, OPA regression, Falco rule validation and PSS/Gatekeeper admission tests.
 
 ## Important deployment gates
