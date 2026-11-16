@@ -55,8 +55,19 @@ jobs:
           PYTHONPATH: app:.
         run: |
           set -euo pipefail
+          python -m compileall -q app collectors wazuh/active-response
           python -m unittest discover -s app/tests -v
           python -m unittest discover -s collectors/tests -v
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          for path in (
+              "wazuh/manager/aegis-gatekeeper-rules.xml",
+              "wazuh/manager/ossec.conf-aegis-active-response.xml",
+              "wazuh/agent/aegis-gatekeeper-localfile.xml",
+          ):
+              ET.parse(path)
+              print(f"XML OK: {path}")
+          PY
 
       - name: Install OPA 0.62.1
         run: |

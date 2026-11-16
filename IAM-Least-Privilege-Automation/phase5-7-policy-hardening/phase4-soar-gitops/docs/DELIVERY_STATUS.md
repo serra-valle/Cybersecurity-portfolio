@@ -8,14 +8,15 @@
 
 | Workstream | Source package | Automated validation | Live acceptance |
 |---|---|---|---|
-| SOAR FastAPI webhook and HMAC verification | Implemented in branch | Unit tests authored; workflow run pending | Not deployed |
-| Kubernetes quarantine and immediate unmanaged-Pod eviction | Implemented in branch | Mocked API tests authored; workflow run pending | Not tested against cluster |
-| Default-deny NetworkPolicies and namespace-scoped RBAC | Manifests authored | Kustomize/CI validation pending | Calico enforcement not attested |
-| Wazuh Active Response and durable retry queue | Scripts and config fragments authored | No manager integration test yet | Not installed or executed |
-| Gatekeeper audit exporter | Script, read-only RBAC and tests authored | Unit tests authored; workflow run pending | Not connected to live Gatekeeper API |
-| Wazuh Gatekeeper rules 100503/100504 | XML source authored | Wazuh analysis test pending | Not installed or verified |
-| Falco rule GitOps | Rule source and ConfigMap generator authored | Falco validation workflow pending | Live Helm/ConfigMap reconciliation not performed |
-| PSS + Gatekeeper unified namespace | Namespace, constraints and test fixtures authored | Admission workflow pending | Not applied to target cluster |
+| SOAR FastAPI webhook and HMAC verification | Implemented in branch | 19 Python unit tests passed in CI | Not deployed |
+| Kubernetes quarantine and immediate unmanaged-Pod eviction | Implemented in branch | Mocked API tests passed in CI | Not tested against target cluster |
+| Default-deny NetworkPolicies and namespace-scoped RBAC | Manifests authored | Kustomize build passed in CI | Calico enforcement not attested |
+| Wazuh Active Response and durable retry queue | Scripts and config fragments authored | Python syntax check pending | Not installed or executed |
+| Gatekeeper audit exporter | Script, read-only RBAC and tests authored | Normalization tests passed in CI | Not connected to live Gatekeeper API |
+| Wazuh Gatekeeper rules 100503/100504 | XML source authored | XML parse check pending | Not installed or verified |
+| Falco rule GitOps | Rule source and ConfigMap generator authored | Falco 0.45.0 rule validation and Kustomize build passed in CI | Live Helm/ConfigMap reconciliation not performed |
+| PSS + Gatekeeper unified namespace | Namespace, constraints and test fixtures authored | Admission workflow pending final result | Not applied to target cluster |
+| Falco driver / eBPF mode | No Phase 4 driver evidence | Not covered by rule syntax validation | Not verified |
 | Evidence/report | Architecture, matrix, runbook and status documents authored | N/A | No Phase 4 runtime logs exist |
 
 ## Explicit release blockers
@@ -27,7 +28,8 @@
 5. The endpoint-selector contract has not been verified against application Services and EndpointSlices.
 6. Wazuh Active Response, durable delivery, Gatekeeper JSONL ingestion, and rules 100503/100504 have not been run end to end.
 7. Falco's declarative ConfigMap has not been reconciled with the live Helm release.
-8. The GitHub Actions workflow must run and its result must be reviewed before any CI pass is reported.
+8. The deployed Falco driver mode has not been captured. Do not claim an eBPF-backed Phase 4 runtime path until this is verified.
+9. The GitHub Actions unified PSS/Gatekeeper admission job must complete successfully before its result is reported as passed.
 
 ## Evidence integrity
 

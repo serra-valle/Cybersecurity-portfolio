@@ -61,12 +61,15 @@ The read-only exporter polls the two Aegis constraint kinds, normalizes \`status
 5. Configure target application Services to select \`aegis.security/endpoint-enabled: "true"\` and verify EndpointSlice removal.
 6. Falco's ConfigMap is source-controlled, but applying it does not automatically reconcile an existing Helm DaemonSet. Merge the ConfigMap data into the current chart configuration and preserve all existing Helm values. Do not load a second copy of the Phase 3 write rule alongside the existing rule.
 7. Confirm Wazuh rule IDs 100503 and 100504 are unused before installing the Gatekeeper rules file.
+8. Verify the live Falco driver mode before describing the runtime path as eBPF-backed. The Phase 4 source and CI validate the Falco rule syntax; they do not prove which driver the live DaemonSet is using.
 
 ## Validation boundary
 
-The GitHub Actions workflow is the intended automated validation path. Its results must be inspected after the pull request is opened; the workflow definition itself is not evidence of a passing run.
+The GitHub Actions workflow is the automated validation path. Its results must be inspected after the pull request is opened; the workflow definition itself is not evidence of a passing run.
 
 No Phase 4 live cluster deployment, Calico packet-isolation test, SOAR webhook execution, Wazuh Active Response execution, Gatekeeper-to-Wazuh ingestion, or containment log is represented as completed in this repository. No synthetic output is presented as live evidence.
+
+The Phase 4 Falco driver mode has not been reverified in a live cluster. Do not describe this delivery as an eBPF-validated containment path until the deployed Falco driver is captured and confirmed.
 
 The earlier Phase 3 observations remain limited to the specific controlled events recorded in \`phase3-runtime-detection/evidence/wazuh-integration/\`. They are not Phase 4 containment evidence.
 

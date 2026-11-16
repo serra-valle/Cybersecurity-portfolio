@@ -120,7 +120,7 @@ Install the scripts on Wazuh Manager:
 
 Set the scripts executable and owner/group according to the existing Wazuh installation. Confirm the Wazuh group name and manager path before copying.
 
-Merge \`wazuh/manager/ossec.conf-aegis-active-response.xml\` into the existing manager \`ossec.conf\`. Do not replace the whole file. Confirm rule IDs 100503 and 100504 are not already assigned elsewhere.
+Merge the \`command\` and \`active-response\` elements inside \`wazuh/manager/ossec.conf-aegis-active-response.xml\` into the existing manager \`ossec.conf\` root. Do not replace the whole file. Confirm rule IDs 100503 and 100504 are not already assigned elsewhere.
 
 Install the systemd service and timer from \`wazuh/systemd/\`, then:
 
@@ -165,9 +165,15 @@ Install the collector dependencies and script:
 python3 -m pip install --requirement collectors/requirements.txt
 \`\`\`
 
-Install \`collectors/gatekeeper_audit_exporter.py\` at \`/opt/aegis-phase4/collectors/gatekeeper_audit_exporter.py\`. Configure \`/etc/aegis-gatekeeper-exporter.env\` with any required environment settings, install the systemd unit, and enable it. The output file is \`/var/log/aegis/gatekeeper-audit.jsonl\`.
+Install \`collectors/gatekeeper_audit_exporter.py\` at \`/opt/aegis-phase4/collectors/gatekeeper_audit_exporter.py\`. Create the empty environment file required by the systemd unit, then install and enable it:
 
-Merge \`wazuh/agent/aegis-gatekeeper-localfile.xml\` into the existing Kali Wazuh agent configuration. Validate the agent configuration and restart the agent. Install the manager rules 100503/100504 before expecting Wazuh alerts.
+\`\`\`bash
+sudo install -m 0600 /dev/null /etc/aegis-gatekeeper-exporter.env
+sudo systemctl daemon-reload
+sudo systemctl enable --now aegis-gatekeeper-audit-exporter.service
+\`\`\`
+
+The output file is \`/var/log/aegis/gatekeeper-audit.jsonl\`. Merge \`wazuh/agent/aegis-gatekeeper-localfile.xml\` into the existing Kali Wazuh agent configuration. Validate the agent configuration and restart the agent. Install the manager rules 100503/100504 before expecting Wazuh alerts.
 
 ## 9. Reconcile Falco declaratively
 
@@ -180,6 +186,8 @@ kubectl kustomize platform/falco
 The output is a source-controlled ConfigMap containing the Aegis write rule. The built-in Falco \`Terminal shell in container\` rule remains the source for rule 100502.
 
 Before applying, inspect the live Falco Helm release and current ConfigMap. Merge the Phase 4 write rule into the existing chart configuration, preserve all existing custom rules and values, and avoid loading two copies of \`Aegis Test Pod Write Below Etc\`. Render the Helm manifests and review the diff before upgrading. A ConfigMap existing in Git is not proof that the Falco DaemonSet has loaded it.
+
+Capture the live Falco driver mode and confirm whether it is using the intended eBPF driver before describing the event path as eBPF-backed. Rule syntax validation does not establish driver mode.
 
 ## 10. Acceptance and evidence
 
