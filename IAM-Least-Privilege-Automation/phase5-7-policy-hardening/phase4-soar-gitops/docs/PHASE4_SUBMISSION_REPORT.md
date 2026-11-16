@@ -2,8 +2,8 @@
 
 **Prepared:** 16 November 2026  
 **Prepared by:** Security Engineering  
-**Repository:** \`serra-valle/Cybersecurity-portfolio\`  
-**Branch:** \`aegis-phase4-soar-gitops-20261112\`  
+**Repository:** `serra-valle/Cybersecurity-portfolio`  
+**Branch:** `aegis-phase4-soar-gitops-20261112`  
 **Pull request:** [#2, Aegis Phase 4](https://github.com/serra-valle/Cybersecurity-portfolio/pull/2)
 
 ## 1. Executive summary
@@ -28,7 +28,7 @@ I extended the FastAPI service with:
 
 I kept controller-managed Pods out of the deletion path. Deleting a controller-owned Pod without changing its workload template can result in an unquarantined replacement. Those Pods are quarantined and preserved instead.
 
-The service fails closed while NetworkPolicy dataplane enforcement is not attested. The deployment configuration currently leaves \`AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=false\`.
+The service fails closed while NetworkPolicy dataplane enforcement is not attested. The deployment configuration currently leaves `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=false`.
 
 ### 2.2 Wazuh Active Response delivery
 
@@ -42,8 +42,8 @@ The Active Response and dispatcher files are source-controlled. They have not be
 
 I added a read-only exporter for:
 
-- \`K8sAegisContainerSecurity\`
-- \`K8sAegisImageIntegrity\`
+- `K8sAegisContainerSecurity`
+- `K8sAegisImageIntegrity`
 
 The exporter reads persisted Gatekeeper constraint violations, normalizes them to JSONL, and emits resolution records when a previously observed violation disappears. Wazuh localfile collection and custom rules 100503/100504 are included.
 
@@ -51,7 +51,7 @@ The exporter normalization tests passed. Live Gatekeeper polling, Wazuh agent in
 
 ### 2.4 Falco and policy GitOps
 
-I added a Phase 4 Falco rule source and a ConfigMap generator. The write rule retains the existing Aegis rule identity and extends its scope to the Phase 4 response-target workload. The built-in Falco \`Terminal shell in container\` rule remains the event source for rule 100502.
+I added a Phase 4 Falco rule source and a ConfigMap generator. The write rule retains the existing Aegis rule identity and extends its scope to the Phase 4 response-target workload. The built-in Falco `Terminal shell in container` rule remains the event source for rule 100502.
 
 I also added declarative Kubernetes namespaces, RBAC, quarantine NetworkPolicies, the SOAR Deployment and the unified Gatekeeper constraints. The existing Phase 2 ConstraintTemplates remain the canonical templates and are reused without changing the older project directory.
 
@@ -59,7 +59,7 @@ The Falco ConfigMap has not been reconciled into the live Helm release. The depl
 
 ### 2.5 Unified PSS and Gatekeeper controls
 
-I defined \`aegis-unified-policy\` with native Pod Security Admission \`restricted:v1.33\` and both Aegis Gatekeeper constraints.
+I defined `aegis-unified-policy` with native Pod Security Admission `restricted:v1.33` and both Aegis Gatekeeper constraints.
 
 The CI admission matrix covered:
 
@@ -74,7 +74,7 @@ These were server-side dry-run admission checks in a disposable CI cluster. The 
 
 ## 3. Automated validation results
 
-[GitHub Actions run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989) passed both jobs on commit \`1f8b6cebf476396b5830d05d6c5d02fb3dc8478c\`.
+[GitHub Actions run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989) passed both jobs on commit `1f8b6cebf476396b5830d05d6c5d02fb3dc8478c`.
 
 | Validation | Result |
 |---|---|
@@ -108,7 +108,7 @@ The SOAR dataplane-attestation setting must remain false until the ingress, egre
 
 ## 5. Submission status
 
-I opened [draft PR #2](https://github.com/serra-valle/Cybersecurity-portfolio/pull/2) against the Phase 3 branch. It is intentionally stacked on [Phase 3 PR #1](https://github.com/serra-valle/Cybersecurity-portfolio/pull/1), so Phase 3 should be merged first. Phase 4 can then be retargeted to \`main\`.
+I opened [draft PR #2](https://github.com/serra-valle/Cybersecurity-portfolio/pull/2) against the Phase 3 branch. It is intentionally stacked on [Phase 3 PR #1](https://github.com/serra-valle/Cybersecurity-portfolio/pull/1), so Phase 3 should be merged first. Phase 4 can then be retargeted to `main`.
 
 The assigned target date was 13 November 2026. This report is dated 16 November 2026 and does not backdate implementation, deployment or acceptance.
 

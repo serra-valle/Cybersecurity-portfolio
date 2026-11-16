@@ -5,7 +5,7 @@ This matrix defines the expected evidence. A source file, unit test, CI workflow
 | ID | Requirement | Positive condition | Negative condition | Current evidence state |
 |---|---|---|---|---|
 | AR-01 | Webhook authentication | Valid HMAC and current timestamp accepted | Missing, stale or tampered signature rejected | Unit tests passed in CI run 43828411989 |
-| AR-02 | Alert allowlisting | Agent \`kali-aegis-lab\`, rule 100501/100502 and approved namespace accepted | Other agent, rule or namespace ignored | Source implementation present; endpoint integration test pending |
+| AR-02 | Alert allowlisting | Agent `kali-aegis-lab`, rule 100501/100502 and approved namespace accepted | Other agent, rule or namespace ignored | Source implementation present; endpoint integration test pending |
 | AR-03 | Quarantine preconditions | Explicit response-target Pod and verified deny-all NetworkPolicy | Missing policy, wrong selector, missing policy type or unattested dataplane blocks mutation | Mocked response tests passed in CI run 43828411989; live test pending |
 | AR-04 | Pod quarantine | Quarantine label and audit annotations applied | Unlabelled Pod remains unchanged | Mocked response test passed in CI run 43828411989; live test pending |
 | AR-05 | Service endpoint exclusion | Endpoint label changes to false and configured Service selector removes the Pod | A Service without the required selector is not assumed to exclude the Pod | Code and selector contract present; EndpointSlice test pending |
@@ -19,7 +19,7 @@ This matrix defines the expected evidence. A source file, unit test, CI workflow
 | PSS-02 | Native PSS denial | Restricted PSS rejects privileged Pod | Privileged Pod must not be admitted | Passed in CI run 43828411989 |
 | PSS-03 | Gatekeeper container security | PSS-compatible Pod with writable root filesystem is denied by Gatekeeper | Writable root filesystem must not be admitted | Passed in CI run 43828411989 |
 | PSS-04 | Gatekeeper image integrity | PSS-compatible image without explicit SHA-256 digest is denied | Tag-only image must not be admitted | Passed in CI run 43828411989 |
-| GI-01 | Falco rule validation | \`falco --validate <rules-file>\` accepts the Phase 4 write rule | Invalid rule syntax fails CI | Falco 0.45.0 validation passed in CI run 43828411989 |
+| GI-01 | Falco rule validation | `falco --validate <rules-file>` accepts the Phase 4 write rule | Invalid rule syntax fails CI | Falco 0.45.0 validation passed in CI run 43828411989 |
 | GI-02 | OPA regression | Existing Aegis Rego unit suite passes | Any regression fails CI | OPA 0.62.1 regression passed 10/10 in CI run 43828411989 |
 | GI-03 | Deployment artifact validation | Python source compiles and Wazuh XML fragments parse | Syntax or XML errors fail CI | Passed in CI run 43828411989 |
 | EBPF-01 | Falco driver mode | Live Falco reports the intended eBPF driver and runtime events are captured | A different or unverified driver must not be described as eBPF | Not verified in Phase 4 |
@@ -28,11 +28,11 @@ The positive Pod fixture uses a syntactically valid placeholder digest and is on
 
 ## Required live network-isolation procedure
 
-Before setting \`AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=true\`:
+Before setting `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=true`:
 
 1. Create a controlled source Pod and a controlled destination Pod in the target namespace.
 2. Prove the test path succeeds before quarantine, recording the exact source/destination and protocol.
-3. Label only the destination Pod as an approved response target and configure its Service selector with \`aegis.security/endpoint-enabled=true\`.
+3. Label only the destination Pod as an approved response target and configure its Service selector with `aegis.security/endpoint-enabled=true`.
 4. Apply the quarantine label and endpoint-disabled label through the SOAR response path.
 5. Verify the Pod is absent from the Service's EndpointSlices.
 6. Prove ingress and egress traffic are both denied by the Calico dataplane.

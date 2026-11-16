@@ -23,7 +23,7 @@
 ## CI evidence
 
 **Full successful run:** [GitHub Actions run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989)  
-**Tested commit:** \`1f8b6cebf476396b5830d05d6c5d02fb3dc8478c\`
+**Tested commit:** `1f8b6cebf476396b5830d05d6c5d02fb3dc8478c`
 
 Both jobs passed:
 
@@ -40,7 +40,7 @@ The current branch subsequently received documentation-only status updates. The 
 1. The SOAR image has not been built or published. The Deployment image is a placeholder and must be replaced with an immutable digest.
 2. The HMAC secret has not been provisioned on Wazuh Manager or in Kubernetes.
 3. The Phase 4 manifests have not been applied to the target cluster.
-4. Calico ingress and egress denial have not been demonstrated. \`AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED\` therefore remains false.
+4. Calico ingress and egress denial have not been demonstrated. `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED` therefore remains false.
 5. The endpoint-selector contract has not been verified against application Services and EndpointSlices.
 6. Wazuh Active Response, durable delivery, Gatekeeper JSONL ingestion, and rules 100503/100504 have not been run end to end.
 7. Falco's declarative ConfigMap has not been reconciled with the live Helm release.
