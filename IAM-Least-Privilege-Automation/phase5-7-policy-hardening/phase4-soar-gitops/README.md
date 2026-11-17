@@ -65,7 +65,11 @@ The read-only exporter polls the two Aegis constraint kinds, normalizes `status.
 
 ## Validation boundary
 
-[CI run 44134158272](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272) passed all three jobs on commit `d262829cf0df0d9974b024edd9fd2699897035ed`. It includes the Python/OPA/Falco source checks, the Kubernetes 1.33.12 / Gatekeeper 3.23.1 admission matrix, and the multi-architecture image build. The image was smoke-tested on AMD64 and ARM64, scanned by Trivy 0.76.2 across all severities with zero vulnerability, misconfiguration or secret findings, and published with an SBOM and Sigstore-signed provenance. Its immutable digest is pinned in the Deployment manifest.
+[Consolidated-head push run 44137127343](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137127343) passed all three jobs on commit `3c40483b2714c09e74405662f983eecb1e4a596b`. The source and policy checks, Kubernetes 1.33.12 / Gatekeeper 3.23.1 admission matrix, and multi-architecture image pipeline all passed. The new image was smoke-tested on AMD64 and ARM64, scanned by Trivy 0.76.2 with zero vulnerability, misconfiguration or secret findings on both architectures, and published with an SBOM and Sigstore-signed provenance.
+
+The consolidated-head image digest is `ghcr.io/serra-valle/aegis-soar@sha256:6993a33a9e0873f5b7b37a255740e6e7d0dbc7e3286b85725d8ad7fb4c2cc05d`. Its full reports are retained as [artifact 14352298031](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137127343/artifacts/14352298031), with [GitHub provenance attestation 68736375](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68736375) and [Rekor entry 3950054994](https://search.sigstore.dev?logIndex=3950054994).
+
+The Deployment manifest remains pinned to the separately verified digest `sha256:7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc` from [run 44134158272](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272). The newer digest is independently verified but has not been promoted into the manifest. [PR validation run 44137140455](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140455) and [policy regression run 44137140567](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140567) also passed.
 
 The earlier [CI baseline run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989) is retained as historical source and policy validation evidence.
 
