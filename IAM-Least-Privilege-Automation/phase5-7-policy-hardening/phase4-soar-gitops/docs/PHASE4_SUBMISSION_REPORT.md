@@ -90,9 +90,27 @@ The image includes a BuildKit SBOM and a Sigstore-signed provenance attestation.
 
 This validates the image artifact only. The Deployment has not been rolled out and no live containment has occurred.
 
+### 2.7 Consolidated-head CI revalidation
+
+After consolidating the delivery documentation and improving the ARM64 smoke-test diagnostics, I ran the Phase 4 pipeline again against commit `3c40483b2714c09e74405662f983eecb1e4a596b`.
+
+[Push run 44137127343](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137127343) passed all three jobs. [PR run 44137140455](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140455) passed both Phase 4 pull-request checks, and [policy regression run 44137140567](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140567) passed both policy-regression jobs.
+
+The consolidated-head push produced an additional multi-architecture image:
+
+```text
+ghcr.io/serra-valle/aegis-soar@sha256:6993a33a9e0873f5b7b37a255740e6e7d0dbc7e3286b85725d8ad7fb4c2cc05d
+```
+
+Both architecture smoke tests passed with the service running as UID/GID 10001, a read-only root filesystem, all capabilities dropped and no-new-privileges. Trivy 0.76.2 reported zero vulnerability, misconfiguration and secret findings on AMD64 and ARM64. The full reports are retained as [artifact 14352298031](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137127343/artifacts/14352298031). Signed provenance was uploaded to [GitHub](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68736375), GHCR and [Rekor](https://search.sigstore.dev?logIndex=3950054994).
+
+The first consolidated push attempt, [run 44136227347](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44136227347), did not pass because the ARM64 health endpoint failed to respond within the original 30-second smoke-test window. That run stopped before Trivy scanning and provenance attestation. I increased the startup deadline to 120 seconds and added container state, exit-code, log and health-response capture for future failures. The subsequent run passed on both architectures. This is consistent with startup-time sensitivity under emulation; I did not treat the first timeout as proof of an application defect.
+
+The Deployment manifest remains pinned to the earlier verified image digest `sha256:7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc` from run 44134158272. The new digest is independently verified but has not been promoted into the manifest. Neither image has been deployed.
+
 ## 3. Automated validation results
 
-[GitHub Actions run 44134158272](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272) passed all three jobs on commit `d262829cf0df0d9974b024edd9fd2699897035ed`. The earlier [run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989) remains the original source and policy baseline.
+[GitHub Actions run 44137127343](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137127343) passed all three jobs on consolidated commit `3c40483b2714c09e74405662f983eecb1e4a596b`. The Phase 4 [PR run 44137140455](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140455) and [policy regression run 44137140567](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140567) also passed. The earlier [run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989) remains the original source and policy baseline, while run 44134158272 validates the image digest currently pinned in the Deployment manifest.
 
 | Validation | Result |
 |---|---|
@@ -109,7 +127,7 @@ This validates the image artifact only. The Deployment has not been rolled out a
 | Trivy 0.76.2 full scan | Zero vulnerability, misconfiguration and secret findings on both architectures |
 | SBOM and provenance | BuildKit SBOM attached; Sigstore-signed provenance uploaded to GitHub, GHCR and Rekor |
 
-The latest run validates the current application, policy, manifests and image build at commit `d262829cf0df0d9974b024edd9fd2699897035ed`. The subsequent delivery-documentation commit pins that verified image digest and records the evidence; it does not change the application or policy behavior.
+The consolidated-head run validates the current application, policy, manifests and image pipeline at commit `3c40483b2714c09e74405662f983eecb1e4a596b`. The additional image digest from that run is independently verified, while the Deployment manifest continues to pin the previously verified digest `7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc`. These CI results do not constitute a live Phase 4 deployment or runtime network-isolation test.
 
 ## 4. Items still required for live acceptance
 
