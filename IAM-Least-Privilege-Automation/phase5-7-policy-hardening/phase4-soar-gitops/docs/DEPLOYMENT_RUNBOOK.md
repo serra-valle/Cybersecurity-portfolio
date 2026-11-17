@@ -5,7 +5,7 @@ This runbook is an implementation guide. It does not state that any step has alr
 ## 1. Preconditions
 
 - Dedicated Kind context: `kind-aegis-phase4-lab`.
-- Kubernetes 1.33.x and a NetworkPolicy-enforcing CNI. The recorded Phase 4 lab uses Calico 3.33.0.
+- A NetworkPolicy-enforcing CNI. The recorded Phase 4 lab is Kubernetes v1.37.0 with Calico 3.33.0. The CI admission matrix currently tests Kubernetes 1.33.12 / Gatekeeper 3.23.1; validate the `restricted:v1.33` PSS label and Gatekeeper compatibility on the live v1.37.0 cluster before applying manifests.
 - Gatekeeper 3.23.1.
 - Existing namespace `aegis-policy-test`.
 - Existing Phase 2 ConstraintTemplates:
@@ -20,20 +20,21 @@ Do not repurpose the Phase 3 Kind cluster or change its CNI as part of this depl
 
 ## 2. Build and pin the SOAR image
 
-From the Phase 4 directory:
+The repository workflow `.github/workflows/aegis-soar-image.yml` builds the image when container source changes are pushed to the Phase 4 branch. It:
 
-```bash
-docker build -t ghcr.io/serra-valle/aegis-soar:phase4 -f Dockerfile .
-docker push ghcr.io/serra-valle/aegis-soar:phase4
-```
+- Resolves the Python 3.12.16 slim Trixie base tag to an immutable registry digest and passes that digest to the Docker build.
+- Builds `linux/amd64` and `linux/arm64` images.
+- Publishes a commit-SHA tag to GHCR, with an SBOM and BuildKit provenance.
+- Scans the published digest with Trivy 0.76.2. HIGH or CRITICAL findings fail the workflow.
+- Attests build provenance after the scan succeeds.
 
-Resolve the published manifest digest from the registry and update `platform/kubernetes/soar-deployment.yaml` to use:
+Wait for the complete workflow to pass. A failed scan can leave an image in GHCR, but that image is not approved for deployment. Copy the immutable digest from the workflow summary and update `platform/kubernetes/soar-deployment.yaml` to use:
 
 ```yaml
 image: ghcr.io/serra-valle/aegis-soar@sha256:<64-character-published-digest>
 ```
 
-Do not deploy the `phase4-pending-build` placeholder tag. Record the exact digest in the delivery evidence.
+Do not deploy the `phase4-pending-build` placeholder or rely on a mutable tag. Record the exact digest, Trivy result, SBOM and provenance evidence in the delivery record.
 
 ## 3. Provision the HMAC secret
 
