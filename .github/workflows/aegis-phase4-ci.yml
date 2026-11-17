@@ -235,7 +235,14 @@ jobs:
           kubectl get k8saegiscontainersecurity,k8saegisimageintegrity -o yaml || true
 
   container-image:
-    if: github.event_name == 'push'
+    # Rebuild only when the image build context or application source changes.
+    if: >-
+      github.event_name == 'push' &&
+      (
+        contains(toJSON(github.event.commits), 'IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops/Dockerfile') ||
+        contains(toJSON(github.event.commits), 'IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops/.dockerignore') ||
+        contains(toJSON(github.event.commits), 'IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops/app/')
+      )
     name: Build, scan and attest SOAR image
     needs:
       - source-validation

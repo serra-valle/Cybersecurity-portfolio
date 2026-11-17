@@ -13,7 +13,7 @@
 | Kubernetes quarantine and immediate unmanaged-Pod eviction | Implemented in branch | Mocked API tests passed in CI | Not tested against target cluster |
 | Default-deny NetworkPolicies and namespace-scoped RBAC | Manifests authored | Kustomize build passed in CI | Calico enforcement not attested |
 | Wazuh Active Response and durable retry queue | Scripts and config fragments authored | Python compile check passed in CI | Not installed or executed |
-| Gatekeeper audit exporter | Script, read-only RBAC and tests authored | Normalization tests passed in CI | Not connected to live Gatekeeper API |
+| Gatekeeper audit exporter | Read-only exporter with atomic checkpoint, completed-audit validation, truncation detection and transition handling | 12 collector tests passed in CI run 44142985557 | Not connected to live Gatekeeper API |
 | Wazuh Gatekeeper rules 100503/100504 | XML source authored | XML parse check passed in CI | Not installed or verified |
 | Falco rule GitOps | Rule source and ConfigMap generator authored | Falco 0.45.0 rule validation and Kustomize build passed in CI | Live Helm/ConfigMap reconciliation not performed |
 | PSS + Gatekeeper unified namespace | Namespace, constraints and test fixtures authored | Full admission matrix passed in CI | Not applied to target cluster |
@@ -67,6 +67,21 @@ All three push-run jobs passed, and the Phase 4 pull-request and policy-regressi
 The initial consolidated push attempt, [run 44136227347](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44136227347), stopped because ARM64 `/healthz` did not respond within the original 30-second window. It stopped before scanning and attestation. I increased the smoke-test startup deadline to 120 seconds and added container-state, exit-code, log and response capture on failure. The subsequent consolidated-head run passed on both architectures. This indicates the first failure was consistent with startup-time sensitivity under emulation; it did not establish a confirmed application defect.
 
 The Deployment manifest remains pinned to the earlier verified digest `sha256:7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc` documented above. The additional digest is independently verified but has not been promoted into the manifest. Neither image has been deployed.
+
+### Gatekeeper exporter hardening and current-head validation
+
+**Commit:** `3ce39b501830756b52f4c1392e838a6621b3a309`  
+**Push run:** [44142985557](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44142985557)  
+**PR validation:** [44143002713](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44143002713)  
+**Policy regression:** [44143002456](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44143002456)
+
+All three push-run jobs passed. Source validation passed 16 SOAR unit tests, 12 Gatekeeper exporter tests, OPA 0.62.1 regression 10/10, Falco 0.45.0 rule validation, Wazuh XML parsing and both Kustomize builds. The disposable Kubernetes 1.33.12 / Gatekeeper 3.23.1 admission matrix also passed.
+
+The image pipeline built AMD64 and ARM64 images. Both hardened runtime smoke tests passed. Trivy generated full per-architecture reports, the configured vulnerability gate passed, and signed provenance was published. The reports are retained as [artifact 14355492115](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44142985557/artifacts/14355492115), and the [GitHub provenance attestation](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68748948) was uploaded to GitHub, GHCR and Rekor.
+
+**Additional verified image:** `ghcr.io/serra-valle/aegis-soar@sha256:8d4569811f1d44d0aa7b0d797c17960dbd5846e5a0c4a0836e4ad738bcfa5662`
+
+This is a separately verified rebuild. It has not been promoted into the Deployment manifest, which remains pinned to the previously approved digest above. No Phase 4 image or application deployment has been performed.
 
 ## Explicit release blockers
 
