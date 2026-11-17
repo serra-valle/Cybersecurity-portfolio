@@ -18,23 +18,23 @@ This runbook is an implementation guide. It does not state that any step has alr
 
 Do not repurpose the Phase 3 Kind cluster or change its CNI as part of this deployment.
 
-## 2. Build and pin the SOAR image
+## 2. Verify the pinned SOAR image
 
-The existing repository workflow `.github/workflows/aegis-phase4-ci.yml` builds the image after both Phase 4 source-validation and unified PSS/Gatekeeper jobs pass on a push to the Phase 4 branch. Pull-request runs validate source and policy but do not publish images. It:
+The Deployment manifest now references the verified immutable image:
 
-- Resolves the Python 3.12.16 slim Trixie base tag to an immutable registry digest and passes that digest to the Docker build.
-- Builds `linux/amd64` and `linux/arm64` images.
-- Publishes a commit-SHA tag to GHCR, with an SBOM and BuildKit provenance.
-- Scans the published digest with Trivy 0.76.2. HIGH or CRITICAL findings fail the workflow.
-- Attests build provenance after the scan succeeds.
-
-Wait for the complete workflow to pass. A failed scan can leave an image in GHCR, but that image is not approved for deployment. Copy the immutable digest from the workflow summary and update `platform/kubernetes/soar-deployment.yaml` to use:
-
-```yaml
-image: ghcr.io/serra-valle/aegis-soar@sha256:<64-character-published-digest>
+```text
+ghcr.io/serra-valle/aegis-soar@sha256:7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc
 ```
 
-Do not deploy the `phase4-pending-build` placeholder or rely on a mutable tag. Record the exact digest, Trivy result, SBOM and provenance evidence in the delivery record.
+The image was built from the immutable base `python:3.12.16-alpine3.24@sha256:c5ba3deef00c7758561a0f03c26f44f10589263d40e732b8748e0d1f38f6dd89`. The Dockerfile upgrades Alpine packages, installs the application dependencies with pip 26.2.0, then removes pip and its bundled installer from the runtime image. The process runs as UID/GID 10001.
+
+[CI run 44134158272](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272) built and published both `linux/amd64` and `linux/arm64`. Runtime smoke tests passed on both architectures with a read-only root filesystem, all capabilities dropped and no-new-privileges. The health endpoint returned HTTP 200; readiness returned the expected HTTP 503 while the HMAC Secret was absent.
+
+Trivy 0.76.2 scanned all severities and vulnerability, misconfiguration and secret scanners on both architecture manifests. Both reports returned zero findings. The full JSON reports are retained as workflow artifact [14351327524](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272). The image also has a BuildKit SBOM and a Sigstore-signed provenance attestation uploaded to [GitHub](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68730154), GHCR and [Rekor](https://search.sigstore.dev?logIndex=3949778857).
+
+This is image-artifact verification only. The Deployment has not been rolled out. Before any rollout, provision the HMAC Secret securely on Kubernetes and Wazuh Manager, verify the target cluster context and complete the remaining live acceptance gates.
+
+For a future rebuild, use `.github/workflows/aegis-phase4-ci.yml`. Promote only the digest produced by a complete successful run with both architecture smoke tests, full Trivy reports, the vulnerability gate, SBOM and signed provenance. A failed scan may leave an image in GHCR, but that image is not approved. Never deploy a mutable tag or the old `phase4-pending-build` placeholder.
 
 ## 3. Provision the HMAC secret
 
@@ -89,7 +89,7 @@ kubectl --context kind-aegis-phase4-lab -n aegis-unified-policy get networkpolic
 kubectl --context kind-aegis-phase4-lab -n aegis-soar-system get deploy,svc,pods
 ```
 
-The Deployment image placeholder must be replaced with the immutable image digest before rollout. The HMAC Secret must exist before the Pod can start.
+The Deployment manifest already pins the verified immutable image digest, but it has not been rolled out. The HMAC Secret must exist before the Pod can start.
 
 ## 5. Keep containment disabled until dataplane acceptance
 
