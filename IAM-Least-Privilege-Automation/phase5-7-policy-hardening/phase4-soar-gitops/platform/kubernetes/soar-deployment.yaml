@@ -43,7 +43,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: aegis-soar
-          image: ghcr.io/serra-valle/aegis-soar:phase4-pending-build
+          image: ghcr.io/serra-valle/aegis-soar@sha256:7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
