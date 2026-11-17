@@ -260,11 +260,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BASE_TAG="python:3.12.16-slim-trixie"
-          BASE_DIGEST="$(docker buildx imagetools inspect "$BASE_TAG" | awk '$1 == "Digest:" {print $2; exit}')"
+          BASE_TAG="3.12.16-slim-trixie"
+          BASE_REPOSITORY="library/python"
+          TOKEN_JSON="$(curl --retry 3 --retry-all-errors --retry-delay 2 -fsSL --get \
+            --data-urlencode "service=registry.docker.io" \
+            --data-urlencode "scope=repository:${BASE_REPOSITORY}:pull" \
+            https://auth.docker.io/token)"
+          BASE_TOKEN="$(jq -er '.token' <<< "$TOKEN_JSON")"
+          BASE_DIGEST="$(curl --retry 3 --retry-all-errors --retry-delay 2 -fsSI \
+            -H "Authorization: Bearer ${BASE_TOKEN}" \
+            -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json" \
+            "https://registry-1.docker.io/v2/${BASE_REPOSITORY}/manifests/${BASE_TAG}" \
+            | awk 'BEGIN { IGNORECASE=1 } tolower($1) == "docker-content-digest:" { gsub("\\r", "", $2); print $2; exit }')"
           [[ "$BASE_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
-          echo "image=${BASE_TAG}@${BASE_DIGEST}" >> "$GITHUB_OUTPUT"
-          echo "Resolved build base: ${BASE_TAG}@${BASE_DIGEST}" >> "$GITHUB_STEP_SUMMARY"
+          BASE_IMAGE="python:${BASE_TAG}@${BASE_DIGEST}"
+          echo "image=${BASE_IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "Resolved build base: ${BASE_IMAGE}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
