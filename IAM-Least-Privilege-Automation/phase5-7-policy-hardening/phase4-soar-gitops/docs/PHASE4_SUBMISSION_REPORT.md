@@ -2,7 +2,8 @@
 
 **Prepared:** 17 November 2026  
 **Prepared by:** Security Engineering  
-**Repository:** `serra-valle/Cybersecurity-portfolio`  
+**GitHub repository:** [serra-valle/Cybersecurity-portfolio](https://github.com/serra-valle/Cybersecurity-portfolio)  
+**Phase 4 project directory:** [Browse Phase 4 source and documentation](https://github.com/serra-valle/Cybersecurity-portfolio/tree/aegis-phase4-soar-gitops-20261112/IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops)  
 **Branch:** `aegis-phase4-soar-gitops-20261112`  
 **Pull request:** [#2, Aegis Phase 4](https://github.com/serra-valle/Cybersecurity-portfolio/pull/2)
 
