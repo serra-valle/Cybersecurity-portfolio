@@ -19,7 +19,7 @@
 | PSS + Gatekeeper unified namespace | Namespace, constraints and test fixtures authored | Full admission matrix passed in CI | Not applied to target cluster |
 | OPA regression | Existing Aegis Rego suite | OPA 0.62.1 passed 10/10 in CI | N/A |
 | Falco driver / eBPF mode | No Phase 4 driver evidence | Not covered by rule syntax validation | Not verified |
-| Evidence/report | Architecture, matrix, runbook and status documents authored | N/A | No Phase 4 runtime logs exist |
+| Evidence/report | Architecture, matrix, runbook, image security review and status documents authored | N/A | No Phase 4 runtime logs exist |
 
 ## CI evidence
 
