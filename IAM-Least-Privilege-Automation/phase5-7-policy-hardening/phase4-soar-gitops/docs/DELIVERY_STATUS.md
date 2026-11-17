@@ -9,7 +9,7 @@
 | Workstream | Source package | Automated validation | Live acceptance |
 |---|---|---|---|
 | SOAR FastAPI webhook and HMAC verification | Implemented in branch | 19 Python unit tests passed in CI | Not deployed |
-| SOAR container supply chain | Alpine 3.24.4 base pinned by digest; pip removed from runtime; non-root image built for AMD64 and ARM64 | Full Trivy scan: zero findings at all severities on both architectures; runtime smoke tests, SBOM and signed provenance passed in CI run 44134158272 | Verified digest pinned in manifest; not deployed |
+| SOAR container supply chain | Alpine 3.24.4 base pinned by digest; pip removed from runtime; non-root image built for AMD64 and ARM64 | Original manifest-pinned image and consolidated-head rebuild both passed full Trivy scans with zero findings, runtime smoke tests, SBOM and signed provenance; runs 44134158272 and 44137127343 | Verified digest pinned in manifest; not deployed |
 | Kubernetes quarantine and immediate unmanaged-Pod eviction | Implemented in branch | Mocked API tests passed in CI | Not tested against target cluster |
 | Default-deny NetworkPolicies and namespace-scoped RBAC | Manifests authored | Kustomize build passed in CI | Calico enforcement not attested |
 | Wazuh Active Response and durable retry queue | Scripts and config fragments authored | Python compile check passed in CI | Not installed or executed |
@@ -34,10 +34,10 @@ The baseline run passed both jobs:
 - Kustomize: Kubernetes and Falco ConfigMap builds passed.
 - Disposable Kubernetes 1.33.12 / Gatekeeper 3.23.1 admission matrix: secure positive Pod admitted; privileged Pod rejected by restricted PSS; writable-root-filesystem and tag-only-image Pods rejected by Gatekeeper.
 
-Run 43828411989 is retained as the historical source and policy baseline. The latest run 44134158272 validates the application, policy, manifests and image pipeline at commit `d262829cf0df0d9974b024edd9fd2699897035ed`. The subsequent delivery commit pins the verified image digest and updates the evidence documents; it does not change the application or policy behavior. CI admission and image smoke tests are not a live Phase 4 deployment or runtime network-isolation test.
+Run 43828411989 is retained as the historical source and policy baseline. Run 44134158272 validates the image currently pinned in the Deployment manifest at commit `d262829cf0df0d9974b024edd9fd2699897035ed`. The consolidated-head revalidation is recorded separately below. CI admission and image smoke tests are not a live Phase 4 deployment or runtime network-isolation test.
 
 
-### Latest full validation and image-supply-chain run
+### Manifest-pinned image validation
 
 **GitHub Actions:** [Run 44134158272](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272)  
 **Commit:** `d262829cf0df0d9974b024edd9fd2699897035ed`  
@@ -53,6 +53,20 @@ All three workflow jobs passed: Python/OPA/Falco validation, the unified PSS/Gat
 - Attached the BuildKit SBOM and created a Sigstore-signed provenance attestation. The attestation was uploaded to [GitHub](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68730154), GHCR and the [Rekor transparency log](https://search.sigstore.dev?logIndex=3949778857).
 
 The verified digest is pinned in `platform/kubernetes/soar-deployment.yaml`. See [IMAGE_SECURITY_REVIEW.md](IMAGE_SECURITY_REVIEW.md) for the complete scan and provenance evidence. This is an artifact promotion decision only. No Phase 4 cluster deployment or containment action has been performed.
+
+### Consolidated-head revalidation
+
+**Push run:** [44137127343](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137127343)  
+**PR run:** [44137140455](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140455)  
+**Policy regression:** [44137140567](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140567)  
+**Commit:** `3c40483b2714c09e74405662f983eecb1e4a596b`  
+**Additional verified image:** `ghcr.io/serra-valle/aegis-soar@sha256:6993a33a9e0873f5b7b37a255740e6e7d0dbc7e3286b85725d8ad7fb4c2cc05d`
+
+All three push-run jobs passed, and the Phase 4 pull-request and policy-regression runs also passed. The new image was built for AMD64 and ARM64. Both runtime smoke tests passed under UID/GID 10001, read-only root filesystem, all capabilities dropped and no-new-privileges. Trivy 0.76.2 reported zero vulnerability, misconfiguration and secret findings on both architectures. The full JSON reports are retained as [artifact 14352298031](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137127343/artifacts/14352298031). Signed provenance was uploaded to [GitHub](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68736375), GHCR and [Rekor](https://search.sigstore.dev?logIndex=3950054994).
+
+The initial consolidated push attempt, [run 44136227347](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44136227347), stopped because ARM64 `/healthz` did not respond within the original 30-second window. It stopped before scanning and attestation. I increased the smoke-test startup deadline to 120 seconds and added container-state, exit-code, log and response capture on failure. The subsequent consolidated-head run passed on both architectures. This indicates the first failure was consistent with startup-time sensitivity under emulation; it did not establish a confirmed application defect.
+
+The Deployment manifest remains pinned to the earlier verified digest `sha256:7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc` documented above. The additional digest is independently verified but has not been promoted into the manifest. Neither image has been deployed.
 
 ## Explicit release blockers
 
