@@ -23,10 +23,10 @@
 
 ## CI evidence
 
-**Full successful run:** [GitHub Actions run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989)  
+**Historical source and policy baseline:** [GitHub Actions run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989)  
 **Tested commit:** `1f8b6cebf476396b5830d05d6c5d02fb3dc8478c`
 
-Both jobs passed:
+The baseline run passed both jobs:
 
 - Python validation: 19 unit tests, Python compilation of application/collector/Active Response scripts, and XML parsing of the Wazuh configuration fragments.
 - OPA 0.62.1 regression: 10/10.
