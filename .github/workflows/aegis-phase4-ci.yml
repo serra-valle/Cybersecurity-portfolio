@@ -371,16 +371,23 @@ jobs:
             trivy image --image-src remote --platform "$platform" --scanners vuln,misconfig,secret --format json --output "$report" "$IMAGE@$DIGEST"
             jq -r --arg arch "$arch" '
               [.Results[]? | .Vulnerabilities[]?] as $all |
+              [$all[] | select(.Severity == "UNKNOWN")] as $unknown |
+              [$all[] | select(.Severity == "LOW")] as $low |
+              [$all[] | select(.Severity == "MEDIUM")] as $medium |
+              [$all[] | select(.Severity == "HIGH")] as $high |
+              [$all[] | select(.Severity == "CRITICAL")] as $critical |
+              [$all[] | select((.Severity == "HIGH" or .Severity == "CRITICAL") and ((.FixedVersion // "") != ""))] as $fixed |
+              [$all[] | select((.Severity == "HIGH" or .Severity == "CRITICAL") and ((.FixedVersion // "") == ""))] as $unfixed |
               "### Trivy scan: linux/\($arch)",
               "Vulnerability instances (all severities): \($all | length)",
               "Unique CVEs (all severities): \($all | map(.VulnerabilityID) | unique | length)",
-              "UNKNOWN: \($all | map(select(.Severity == \"UNKNOWN\")) | length)",
-              "LOW: \($all | map(select(.Severity == \"LOW\")) | length)",
-              "MEDIUM: \($all | map(select(.Severity == \"MEDIUM\")) | length)",
-              "HIGH: \($all | map(select(.Severity == \"HIGH\")) | length)",
-              "CRITICAL: \($all | map(select(.Severity == \"CRITICAL\")) | length)",
-              "HIGH/CRITICAL with a published fix: \($all | map(select((.Severity == \"HIGH\" or .Severity == \"CRITICAL\") and ((.FixedVersion // \"\") != \"\")) | length)",
-              "HIGH/CRITICAL without a published fix: \($all | map(select((.Severity == \"HIGH\" or .Severity == \"CRITICAL\") and ((.FixedVersion // \"\") == \"\")) | length)"
+              "UNKNOWN: \($unknown | length)",
+              "LOW: \($low | length)",
+              "MEDIUM: \($medium | length)",
+              "HIGH: \($high | length)",
+              "CRITICAL: \($critical | length)",
+              "HIGH/CRITICAL with a published fix: \($fixed | length)",
+              "HIGH/CRITICAL without a published fix: \($unfixed | length)"
             ' "$report" >> "$GITHUB_STEP_SUMMARY"
           done
 
