@@ -34,7 +34,7 @@ Both jobs passed:
 - Kustomize: Kubernetes and Falco ConfigMap builds passed.
 - Disposable Kubernetes 1.33.12 / Gatekeeper 3.23.1 admission matrix: secure positive Pod admitted; privileged Pod rejected by restricted PSS; writable-root-filesystem and tag-only-image Pods rejected by Gatekeeper.
 
-The current branch subsequently received documentation-only status updates. The successful run validates the application, manifests, fixtures and workflow implementation. These checks are CI admission and source tests, not deployment or runtime network-isolation tests.
+Run 43828411989 is retained as the historical source and policy baseline. The latest run 44134158272 validates the application, policy, manifests and image pipeline at commit `d262829cf0df0d9974b024edd9fd2699897035ed`. The subsequent delivery commit pins the verified image digest and updates the evidence documents; it does not change the application or policy behavior. CI admission and image smoke tests are not a live Phase 4 deployment or runtime network-isolation test.
 
 
 ### Latest full validation and image-supply-chain run
@@ -52,7 +52,7 @@ All three workflow jobs passed: Python/OPA/Falco validation, the unified PSS/Gat
 - Uploaded the full per-architecture JSON reports as workflow artifact [14351327524](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272).
 - Attached the BuildKit SBOM and created a Sigstore-signed provenance attestation. The attestation was uploaded to [GitHub](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68730154), GHCR and the [Rekor transparency log](https://search.sigstore.dev?logIndex=3949778857).
 
-The verified digest is pinned in `platform/kubernetes/soar-deployment.yaml`. This is an artifact promotion decision only. No Phase 4 cluster deployment or containment action has been performed.
+The verified digest is pinned in `platform/kubernetes/soar-deployment.yaml`. See [IMAGE_SECURITY_REVIEW.md](IMAGE_SECURITY_REVIEW.md) for the complete scan and provenance evidence. This is an artifact promotion decision only. No Phase 4 cluster deployment or containment action has been performed.
 
 ## Explicit release blockers
 
