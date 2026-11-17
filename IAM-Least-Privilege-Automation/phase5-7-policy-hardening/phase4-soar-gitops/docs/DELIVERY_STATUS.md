@@ -9,7 +9,7 @@
 | Workstream | Source package | Automated validation | Live acceptance |
 |---|---|---|---|
 | SOAR FastAPI webhook and HMAC verification | Implemented in branch | 19 Python unit tests passed in CI | Not deployed |
-| SOAR container supply chain | Non-root Dockerfile hardened; `.dockerignore` and multi-architecture build workflow authored | Build, Trivy HIGH/CRITICAL scan, SBOM and provenance steps defined; no successful run observed yet | Image not yet approved, digest not pinned |
+| SOAR container supply chain | Non-root Dockerfile hardened; `.dockerignore` and multi-architecture build workflow authored | Image job integrated into Phase 4 CI after source and admission checks; first image-job result pending | Image not yet approved, digest not pinned |
 | Kubernetes quarantine and immediate unmanaged-Pod eviction | Implemented in branch | Mocked API tests passed in CI | Not tested against target cluster |
 | Default-deny NetworkPolicies and namespace-scoped RBAC | Manifests authored | Kustomize build passed in CI | Calico enforcement not attested |
 | Wazuh Active Response and durable retry queue | Scripts and config fragments authored | Python compile check passed in CI | Not installed or executed |
