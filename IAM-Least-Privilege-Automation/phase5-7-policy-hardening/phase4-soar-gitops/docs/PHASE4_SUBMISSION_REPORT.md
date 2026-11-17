@@ -10,7 +10,7 @@
 
 I prepared the Phase 4 implementation package for automated Kubernetes response, Gatekeeper audit telemetry and declarative policy delivery. The package now includes the SOAR webhook, Kubernetes response controls, Wazuh Active Response integration files, Gatekeeper audit exporter, Falco rule source, unified PSS and Gatekeeper policy fixtures, CI validation and deployment documentation.
 
-The automated source, policy admission and multi-architecture image checks passed in GitHub Actions. I built and scanned the SOAR image, tested its hardened runtime behavior on both architectures, attached an SBOM and signed provenance, and pinned the verified digest in the Deployment manifest. I have not deployed the Phase 4 package into the target lab or run the end-to-end Wazuh-to-SOAR-to-Kubernetes containment path. I am keeping those items separate from the verified CI results rather than presenting them as completed.
+The automated source, policy admission and multi-architecture image checks passed in GitHub Actions. I built and scanned the SOAR image, tested its hardened runtime behavior on both architectures, attached an SBOM and signed provenance, and pinned the approved digest in the Deployment manifest. I subsequently installed Gatekeeper 3.23.1 in the dedicated Phase 4 Kind lab (Kubernetes v1.37.0 / Calico 3.33.0), applied the Phase 4 templates and unified constraints, and verified actual admission-webhook enforcement with positive and negative server-side dry-run tests. The SOAR Deployment and end-to-end Wazuh-to-SOAR containment path have not been deployed or validated. The AWS-hosted Wazuh Manager is unavailable because the AWS account is closed. I distinguish these runtime results and limitations from the CI evidence.
 
 ## 2. Work delivered
 
@@ -47,7 +47,7 @@ I added a read-only exporter for:
 
 The exporter reads persisted Gatekeeper constraint violations, normalizes them to JSONL, and emits resolution records when a previously observed violation disappears. Wazuh localfile collection and custom rules 100503/100504 are included.
 
-The exporter normalization tests passed. Live Gatekeeper polling, Wazuh agent ingestion and manager alert generation remain outstanding.
+The exporter has 12 passing unit tests covering normalization, checkpoint persistence, duplicate replay, resolution transitions, truncated snapshots and failure handling. Gatekeeper audit snapshots were also read successfully from the live Phase 4 constraints. The exporter service itself has not been deployed, and Wazuh agent ingestion and manager alert generation remain outstanding because the AWS-hosted Manager is unavailable.
 
 ### 2.4 Falco and policy GitOps
 
@@ -70,7 +70,7 @@ The CI admission matrix covered:
 | PSS-compatible Pod with writable root filesystem | Rejected by Gatekeeper | Passed |
 | PSS-compatible Pod with tag-only image | Rejected by Gatekeeper | Passed |
 
-These were server-side dry-run admission checks in a disposable CI cluster. The positive fixture uses a syntactically valid placeholder digest and is not a pullable image.
+These CI checks were server-side dry-run admission tests in a disposable cluster. The positive fixture uses a syntactically valid placeholder digest and is not a pullable image. I subsequently repeated the positive and negative admission checks against the dedicated Phase 4 lab: the secure Pod was admitted; writable-root-filesystem and tag-only-image Pods were rejected by the Gatekeeper validation webhook; and the privileged Pod was rejected by native Pod Security Admission. The Phase 4 constraints report `enforced: true` across the Gatekeeper pods. The audit controller also produced timestamped snapshots for both constraints, with zero violations at the recorded observation. These tests establish policy admission and audit API operation, not SOAR containment or Wazuh delivery.
 
 ### 2.6 Container image supply chain
 
@@ -114,7 +114,8 @@ The Deployment manifest remains pinned to the earlier verified image digest `sha
 
 | Validation | Result |
 |---|---|
-| SOAR and Gatekeeper exporter Python unit tests | 19 passed |
+| SOAR application unit tests | 16 passed in code validation run 44142985557 |
+| Gatekeeper exporter unit tests | 12 passed in code validation run 44142985557 and local regression run |
 | Python compilation of application, collector and Active Response scripts | Passed |
 | Wazuh XML configuration parsing | Passed |
 | OPA 0.62.1 regression | 10/10 passed |
@@ -131,18 +132,15 @@ The consolidated-head run validates the current application, policy, manifests a
 
 ## 4. Items still required for live acceptance
 
-I have not marked Phase 4 as fully complete because these tasks still require execution and evidence:
+I have not marked Phase 4 as operationally complete. The remaining acceptance gaps are:
 
-1. Provision the same high-entropy HMAC secret on Wazuh Manager and as the Kubernetes Secret. Keep it outside Git and transfer it securely.
-2. Validate the target Phase 4 cluster context, Kubernetes v1.37.0 / Calico 3.33.0 compatibility, and the restricted:v1.33 PSS label before applying manifests.
-3. Apply the Phase 4 manifests to the dedicated Phase 4 lab. The verified image digest is already pinned, but no Deployment rollout has occurred.
-4. Prove Calico blocks both ingress and egress to quarantined Pods.
-5. Verify that application Services use the endpoint-eligibility selector and that quarantined Pods disappear from EndpointSlices.
-6. Execute the Wazuh Active Response path and confirm durable retry behavior during a controlled webhook outage.
-7. Confirm Gatekeeper JSONL records reach Wazuh and rules 100503/100504 generate the expected alerts.
-8. Reconcile the Falco ConfigMap into the live Helm release and verify that the existing rule is not duplicated.
-9. Capture the deployed Falco driver mode. I have not verified that the live Phase 4 path is using eBPF, so I am not describing it as eBPF-validated.
-10. Capture genuine end-to-end containment logs and attach them to the evidence package.
+1. Complete exporter freshness hardening and deploy the collector with a dedicated, renewable read-only Kubernetes identity. The current exporter tests pass, but the systemd service is not deployed.
+2. Provision the HMAC secret securely in Kubernetes and on a restored Wazuh Manager. Keep it outside Git.
+3. Restore Wazuh Manager infrastructure. The previous AWS-hosted Manager is unavailable because the AWS account is closed; therefore Active Response, dispatcher delivery, Gatekeeper JSONL ingestion and rules 100503/100504 cannot currently be exercised.
+4. Deploy the SOAR workload only after its secret and runtime prerequisites are available.
+5. Prove Calico ingress and egress isolation, Service selector eligibility and EndpointSlice removal.
+6. Reconcile the Falco ConfigMap into the live Helm release, avoid duplicate rules, and capture the actual Falco driver mode.
+7. Execute controlled SOAR containment and capture genuine end-to-end evidence.
 
 The SOAR dataplane-attestation setting must remain false until the ingress, egress and EndpointSlice checks are complete.
 
@@ -152,4 +150,4 @@ I opened [draft PR #2](https://github.com/serra-valle/Cybersecurity-portfolio/pu
 
 The assigned target date was 13 November 2026. This report is dated 17 November 2026 and does not backdate implementation, deployment or acceptance.
 
-**Current conclusion:** the Phase 4 source package, CI admission suite and immutable SOAR image supply chain are validated. The image digest is pinned but not deployed. Live deployment, network containment, Wazuh integration and runtime evidence are still required before I can report full operational acceptance.
+**Current conclusion:** the Phase 4 source package, CI admission suite, immutable SOAR image supply chain, Gatekeeper installation, unified constraint enforcement and Gatekeeper audit snapshot retrieval are validated. The SOAR Deployment, exporter service, Wazuh integration, Calico dataplane isolation and end-to-end containment remain unverified. The AWS account closure prevents access to the previous Wazuh Manager. This is a partially accepted engineering delivery, not a claim of completed operational SOAR.
