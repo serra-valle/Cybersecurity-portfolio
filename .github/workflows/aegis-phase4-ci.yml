@@ -372,11 +372,11 @@ jobs:
             jq -r --arg arch "$arch" '
               [.Results[]? | .Vulnerabilities[]? |
                 select(.Severity == "HIGH" or .Severity == "CRITICAL")] as $v |
-              "### Trivy scan: linux/\\($arch)",
-              "HIGH/CRITICAL vulnerability instances: \\($v | length)",
-              "Unique CVEs: \\($v | map(.VulnerabilityID) | unique | length)",
-              "With a published fix: \\($v | map(select((.FixedVersion // "") != "")) | length)",
-              "Without a published fix: \\($v | map(select((.FixedVersion // "") == "")) | length)"
+              "### Trivy scan: linux/\($arch)",
+              "HIGH/CRITICAL vulnerability instances: \($v | length)",
+              "Unique CVEs: \($v | map(.VulnerabilityID) | unique | length)",
+              "With a published fix: \($v | map(select((.FixedVersion // "") != "")) | length)",
+              "Without a published fix: \($v | map(select((.FixedVersion // "") == "")) | length)"
             ' "$report" >> "$GITHUB_STEP_SUMMARY"
           done
 
@@ -419,11 +419,11 @@ jobs:
         run: |
           set -euo pipefail
           {
-            printf '%s\\n' "### Aegis SOAR image published"
-            printf -- '- Immutable image: `%s@%s`\\n' "$IMAGE" "$DIGEST"
-            printf -- '- Build base: `%s`\\n' "$BASE_IMAGE"
-            printf -- '- Architectures: `linux/amd64, linux/arm64`\\n'
-            printf '%s\\n' "- Runtime smoke tests: passed on amd64 and arm64 with non-root, read-only root filesystem, no capabilities, and no-new-privileges"
-            printf '%s\\n' "- SBOM and signed provenance: attached"
-            printf '%s\\n' "- Trivy: fixable HIGH/CRITICAL findings fail the job on both architectures; full reports are retained"
+            printf '%s\n' "### Aegis SOAR image published"
+            printf -- '- Immutable image: `%s@%s`\n' "$IMAGE" "$DIGEST"
+            printf -- '- Build base: `%s`\n' "$BASE_IMAGE"
+            printf -- '- Architectures: `linux/amd64, linux/arm64`\n'
+            printf '%s\n' "- Runtime smoke tests: passed on amd64 and arm64 with non-root, read-only root filesystem, no capabilities, and no-new-privileges"
+            printf '%s\n' "- SBOM and signed provenance: attached"
+            printf '%s\n' "- Trivy: fixable HIGH/CRITICAL findings fail the job on both architectures; full reports are retained"
           } >> "$GITHUB_STEP_SUMMARY"
