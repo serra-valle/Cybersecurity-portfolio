@@ -1,4 +1,4 @@
-ARG PYTHON_BASE_IMAGE=python:3.12.16-slim-trixie
+ARG PYTHON_BASE_IMAGE=python:3.12.16-alpine3.24
 FROM ${PYTHON_BASE_IMAGE}
 
 ARG VCS_REF=unknown
@@ -13,16 +13,11 @@ LABEL org.opencontainers.image.title="Aegis SOAR" \
       org.opencontainers.image.source="https://github.com/serra-valle/Cybersecurity-portfolio" \
       org.opencontainers.image.revision="${VCS_REF}"
 
-# Apply the Debian security fix for zlib CVE-2026-85091 and fail closed if
-# the configured repositories do not provide the fixed package version.
-RUN apt-get update \
-    && apt-get install --no-install-recommends --only-upgrade -y zlib1g \
-    && ZLIB_VERSION="$(dpkg-query -W -f='${Version}' zlib1g)" \
-    && dpkg --compare-versions "${ZLIB_VERSION}" ge "1:1.3.dfsg+really1.3.1-1+deb13u1" \
-    && rm -rf /var/lib/apt/lists/* \
-    && groupadd --gid 10001 aegis \
-    && useradd --uid 10001 --gid 10001 --no-create-home \
-       --shell /usr/sbin/nologin aegis
+# Refresh the pinned Alpine base and retain the CA roots needed for
+# authenticated Kubernetes API communication. The runtime uses a numeric
+# non-root identity and does not need a package manager at application runtime.
+RUN apk upgrade --no-cache \
+    && apk add --no-cache ca-certificates
 
 WORKDIR /app
 
