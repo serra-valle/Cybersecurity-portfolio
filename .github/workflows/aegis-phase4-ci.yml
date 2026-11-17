@@ -379,8 +379,8 @@ jobs:
               "MEDIUM: \($all | map(select(.Severity == \"MEDIUM\")) | length)",
               "HIGH: \($all | map(select(.Severity == \"HIGH\")) | length)",
               "CRITICAL: \($all | map(select(.Severity == \"CRITICAL\")) | length)",
-              "HIGH/CRITICAL with a published fix: \($all | map(select((.Severity == \"HIGH\" or .Severity == \"CRITICAL\") and ((.FixedVersion // "") != "")) | length)",
-              "HIGH/CRITICAL without a published fix: \($all | map(select((.Severity == \"HIGH\" or .Severity == \"CRITICAL\") and ((.FixedVersion // "") == "")) | length)"
+              "HIGH/CRITICAL with a published fix: \($all | map(select((.Severity == \"HIGH\" or .Severity == \"CRITICAL\") and ((.FixedVersion // \"\") != \"\")) | length)",
+              "HIGH/CRITICAL without a published fix: \($all | map(select((.Severity == \"HIGH\" or .Severity == \"CRITICAL\") and ((.FixedVersion // \"\") == \"\")) | length)"
             ' "$report" >> "$GITHUB_STEP_SUMMARY"
           done
 
