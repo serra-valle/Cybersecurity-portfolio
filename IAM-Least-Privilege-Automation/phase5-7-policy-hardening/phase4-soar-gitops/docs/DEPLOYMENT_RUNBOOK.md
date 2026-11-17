@@ -1,18 +1,17 @@
 # Aegis Phase 4 Deployment Runbook
 
-This runbook is an implementation guide. It does not state that any step has already been executed. Run it only in the dedicated Phase 4 lab and review each command against the current cluster and Wazuh configuration.
+This runbook records the deployment and recovery procedure for the dedicated Phase 4 lab. Gatekeeper installation, Phase 4 constraint creation, and admission verification have been executed in that lab. The SOAR Deployment, exporter service, Wazuh integration and dataplane containment path have not been completed. Treat the remaining steps as future execution instructions, not evidence of completed acceptance.
 
 ## 1. Preconditions
 
 - Dedicated Kind context: \`kind-aegis-phase4-lab\`.
-- A NetworkPolicy-enforcing CNI. The recorded Phase 4 lab is Kubernetes v1.37.0 with Calico 3.33.0. The CI admission matrix currently tests Kubernetes 1.33.12 / Gatekeeper 3.23.1; validate the \`restricted:v1.33\` PSS label and Gatekeeper compatibility on the live v1.37.0 cluster before applying manifests.
+- A NetworkPolicy-enforcing CNI. The recorded Phase 4 lab is Kubernetes v1.37.0 with Calico 3.33.0. The CI admission matrix currently tests Kubernetes 1.33.12 / Gatekeeper 3.23.1; The Phase 4 lab admission checks have verified the \`restricted:v1.33\` PSS label and Gatekeeper 3.23.1 webhook behavior on Kubernetes v1.37.0.
 - Gatekeeper 3.23.1.
-- Existing namespace \`aegis-policy-test\`.
+- The \`aegis-unified-policy\` and \`aegis-soar-system\` namespaces are created by \`platform/kubernetes/namespaces.yaml\`. The Phase 4 Gatekeeper constraints are scoped only to \`aegis-unified-policy\`; do not create or target the legacy \`aegis-policy-test\` namespace.
 - Existing Phase 2 ConstraintTemplates:
   - \`phase2-advanced/kubernetes/gatekeeper/container-security-template.yaml\`
   - \`phase2-advanced/kubernetes/gatekeeper/image-integrity-template.yaml\`
-- Wazuh Manager rules 100501 and 100502 already installed and verified from Phase 3.
-- Wazuh Manager can accept a loopback-only reverse SSH forward from Kali.
+- Wazuh Manager infrastructure must be available before Active Response or alert-ingestion steps can run. The former AWS-hosted Wazuh Manager is currently unavailable because the AWS account is closed. Phase 3 rule/configuration evidence does not establish current Manager availability.
 - A dedicated HMAC key, stored outside Git and shared securely between the manager and Kubernetes Secret.
 - A built SOAR container image published to GHCR.
 
@@ -55,7 +54,7 @@ kubectl --context kind-aegis-phase4-lab create namespace aegis-soar-system --dry
 kubectl --context kind-aegis-phase4-lab -n aegis-soar-system create secret generic aegis-soar-hmac --from-file=key=./aegis-soar-hmac.key
 \`\`\`
 
-On Wazuh Manager, install the same key at \`/etc/aegis-soar/hmac.key\` with owner \`root\`, group \`wazuh\`, and mode \`0640\`. The dispatcher requires at least 32 bytes.
+On a restored Wazuh Manager, install the same key at \`/etc/aegis-soar/hmac.key\` with owner \`root\`, group \`wazuh\`, and mode \`0640\`. The dispatcher requires at least 32 bytes.
 
 ## 4. Apply Gatekeeper templates and Phase 4 manifests
 
@@ -74,7 +73,7 @@ kubectl --context kind-aegis-phase4-lab apply -f platform/kubernetes/namespaces.
 kubectl --context kind-aegis-phase4-lab apply -k platform/kubernetes
 \`\`\`
 
-The \`aegis-policy-test\` namespace must already exist. Review the rendered Kustomize output before applying:
+Review the rendered Kustomize output before applying. The current Phase 4 constraints target \`aegis-unified-policy\`; do not add a legacy \`aegis-policy-test\` namespace or widen the constraint scope:
 
 \`\`\`bash
 kubectl kustomize platform/kubernetes
@@ -84,7 +83,7 @@ Confirm the two Phase 4 Gatekeeper constraints, both quarantine NetworkPolicies,
 
 \`\`\`bash
 kubectl --context kind-aegis-phase4-lab get k8saegiscontainersecurity,k8saegisimageintegrity
-kubectl --context kind-aegis-phase4-lab -n aegis-policy-test get networkpolicy aegis-quarantine-default-deny
+kubectl --context kind-aegis-phase4-lab -n aegis-unified-policy get networkpolicy aegis-quarantine-default-deny
 kubectl --context kind-aegis-phase4-lab -n aegis-unified-policy get networkpolicy aegis-quarantine-default-deny
 kubectl --context kind-aegis-phase4-lab -n aegis-soar-system get deploy,svc,pods
 \`\`\`
@@ -113,7 +112,9 @@ Target application Services must include \`aegis.security/endpoint-enabled: "tru
 
 ## 6. Configure the Wazuh Active Response path
 
-Install the scripts on Wazuh Manager:
+**Current blocker:** the AWS-hosted Wazuh Manager is unavailable because the AWS account is closed. The following are recovery instructions only. Do not report Active Response or Gatekeeper alert ingestion as operational until a Manager is restored, the configuration is installed, and live alerts are observed.
+
+Install the scripts on the restored Wazuh Manager:
 
 - \`wazuh/active-response/aegis-soar-active-response.py\` to \`/var/ossec/active-response/bin/aegis-soar-active-response.py\`.
 - \`wazuh/active-response/aegis-soar-dispatcher.py\` to \`/var/ossec/integrations/aegis-soar-dispatcher.py\`.
@@ -198,4 +199,4 @@ Capture the live Falco driver mode and confirm whether it is using the intended 
 
 Run the workflow and the live tests in [ACCEPTANCE_MATRIX.md](ACCEPTANCE_MATRIX.md). Capture only real output from the target cluster and Wazuh services. Include timestamps, command context, relevant resource state and SHA-256 checksums. Do not create synthetic logs to fill an evidence gap.
 
-The release remains incomplete until all required runtime tests pass and the status record is updated with actual evidence.
+The remaining release gates are Wazuh Manager restoration, exporter service deployment and ingestion, SOAR rollout, Calico ingress/egress enforcement, EndpointSlice exclusion, and genuine containment evidence. Do not set either destructive-response or dataplane-attestation flags to true without the corresponding live acceptance evidence.
