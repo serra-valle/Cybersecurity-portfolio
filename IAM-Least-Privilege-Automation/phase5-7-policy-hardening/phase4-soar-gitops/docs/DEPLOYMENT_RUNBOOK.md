@@ -20,7 +20,7 @@ Do not repurpose the Phase 3 Kind cluster or change its CNI as part of this depl
 
 ## 2. Build and pin the SOAR image
 
-The repository workflow `.github/workflows/aegis-soar-image.yml` builds the image when container source changes are pushed to the Phase 4 branch. It:
+The existing repository workflow `.github/workflows/aegis-phase4-ci.yml` builds the image after both Phase 4 source-validation and unified PSS/Gatekeeper jobs pass on a push to the Phase 4 branch. Pull-request runs validate source and policy but do not publish images. It:
 
 - Resolves the Python 3.12.16 slim Trixie base tag to an immutable registry digest and passes that digest to the Docker build.
 - Builds `linux/amd64` and `linux/arm64` images.
