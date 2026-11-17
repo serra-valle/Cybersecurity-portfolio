@@ -326,14 +326,25 @@ jobs:
             [[ "$image_user" == "10001:10001" ]]
 
             health_code=""
-            for attempt in $(seq 1 30); do
-              health_code="$(curl -sS -o "/tmp/aegis-healthz-$arch.json" -w '%{http_code}' "http://127.0.0.1:$port/healthz" 2>/dev/null || true)"
+            deadline=$((SECONDS + 120))
+            while (( SECONDS < deadline )); do
+              container_state="$(docker inspect --format '{{.State.Status}}' "$container")"
+              if [[ "$container_state" != "running" ]]; then
+                break
+              fi
+              health_code="$(curl --connect-timeout 2 --max-time 4 -sS -o "/tmp/aegis-healthz-$arch.json" -w '%{http_code}' "http://127.0.0.1:$port/healthz" 2>"/tmp/aegis-healthz-$arch.curl.err" || true)"
               [[ "$health_code" == "200" ]] && break
-              sleep 1
+              sleep 2
             done
             if [[ "$health_code" != "200" ]]; then
-              docker logs "$container" || true
-              echo "ERROR: $arch /healthz did not return HTTP 200."
+              echo "ERROR: $arch /healthz did not return HTTP 200 before the 120-second deadline (last HTTP code: ${health_code:-none})."
+              docker inspect --format 'status={{.State.Status}} exit_code={{.State.ExitCode}} oom_killed={{.State.OOMKilled}} error={{.State.Error}} started_at={{.State.StartedAt}} finished_at={{.State.FinishedAt}}' "$container" || true
+              echo "Container logs:"
+              docker logs --timestamps "$container" || true
+              echo "Last curl error:"
+              cat "/tmp/aegis-healthz-$arch.curl.err" || true
+              echo "Last health response:"
+              cat "/tmp/aegis-healthz-$arch.json" || true
               exit 1
             fi
             jq -e '.status == "ok"' "/tmp/aegis-healthz-$arch.json"
