@@ -1,6 +1,6 @@
 # Aegis Guardrail Phase 4 Delivery Report
 
-**Prepared:** 16 November 2026  
+**Prepared:** 17 November 2026  
 **Prepared by:** Security Engineering  
 **Repository:** `serra-valle/Cybersecurity-portfolio`  
 **Branch:** `aegis-phase4-soar-gitops-20261112`  
@@ -10,7 +10,7 @@
 
 I prepared the Phase 4 implementation package for automated Kubernetes response, Gatekeeper audit telemetry and declarative policy delivery. The package now includes the SOAR webhook, Kubernetes response controls, Wazuh Active Response integration files, Gatekeeper audit exporter, Falco rule source, unified PSS and Gatekeeper policy fixtures, CI validation and deployment documentation.
 
-The automated source and admission checks passed in GitHub Actions. I have not deployed the Phase 4 package into the target lab or run the end-to-end Wazuh-to-SOAR-to-Kubernetes containment path. I am keeping those items separate from the verified CI results rather than presenting them as completed.
+The automated source, policy admission and multi-architecture image checks passed in GitHub Actions. I built and scanned the SOAR image, tested its hardened runtime behavior on both architectures, attached an SBOM and signed provenance, and pinned the verified digest in the Deployment manifest. I have not deployed the Phase 4 package into the target lab or run the end-to-end Wazuh-to-SOAR-to-Kubernetes containment path. I am keeping those items separate from the verified CI results rather than presenting them as completed.
 
 ## 2. Work delivered
 
@@ -72,9 +72,27 @@ The CI admission matrix covered:
 
 These were server-side dry-run admission checks in a disposable CI cluster. The positive fixture uses a syntactically valid placeholder digest and is not a pullable image.
 
+### 2.6 Container image supply chain
+
+I replaced the Debian slim base after the first complete Trivy report identified 47 HIGH OS-package findings across 11 CVEs with no fixed Trixie package versions available at scan time. The replacement uses the immutable `python:3.12.16-alpine3.24` base digest. I also upgraded pip to 26.2.0 for dependency installation, then removed pip and its bundled installer from the runtime image.
+
+The final image is:
+
+```text
+ghcr.io/serra-valle/aegis-soar@sha256:7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc
+```
+
+The image was published for `linux/amd64` and `linux/arm64`. Both architecture smoke tests ran the service as UID/GID 10001 with a read-only root filesystem, all capabilities dropped and no-new-privileges. The health endpoint returned HTTP 200. Readiness returned the expected HTTP 503 while the HMAC secret was absent, confirming the service remained fail-closed.
+
+Trivy 0.76.2 scanned all severities with vulnerability, misconfiguration and secret scanners on both architecture manifests. The final reports contained zero findings on AMD64 and ARM64. The full JSON reports are retained as workflow artifact [14351327524](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272).
+
+The image includes a BuildKit SBOM and a Sigstore-signed provenance attestation. The attestation was uploaded to [GitHub](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68730154), GHCR and the [Rekor transparency log](https://search.sigstore.dev?logIndex=3949778857). The immutable digest is pinned in the Kubernetes Deployment manifest.
+
+This validates the image artifact only. The Deployment has not been rolled out and no live containment has occurred.
+
 ## 3. Automated validation results
 
-[GitHub Actions run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989) passed both jobs on commit `1f8b6cebf476396b5830d05d6c5d02fb3dc8478c`.
+[GitHub Actions run 44134158272](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272) passed all three jobs on commit `d262829cf0df0d9974b024edd9fd2699897035ed`. The earlier [run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989) remains the original source and policy baseline.
 
 | Validation | Result |
 |---|---|
@@ -86,16 +104,20 @@ These were server-side dry-run admission checks in a disposable CI cluster. The 
 | Kubernetes Kustomize build | Passed |
 | Falco ConfigMap Kustomize build | Passed |
 | Kubernetes 1.33.12 and Gatekeeper 3.23.1 admission matrix | All four expected outcomes passed |
+| Multi-architecture image build | AMD64 and ARM64 published |
+| Hardened runtime smoke tests | Both architectures passed under non-root, read-only-root, no-capability and no-new-privileges settings |
+| Trivy 0.76.2 full scan | Zero vulnerability, misconfiguration and secret findings on both architectures |
+| SBOM and provenance | BuildKit SBOM attached; Sigstore-signed provenance uploaded to GitHub, GHCR and Rekor |
 
-The current branch contains documentation and status updates after the tested commit. No application, policy, manifest or test-fixture behavior changed after that successful run.
+The latest run validates the current application, policy, manifests and image build at commit `d262829cf0df0d9974b024edd9fd2699897035ed`. The subsequent delivery-documentation commit pins that verified image digest and records the evidence; it does not change the application or policy behavior.
 
 ## 4. Items still required for live acceptance
 
 I have not marked Phase 4 as fully complete because these tasks still require execution and evidence:
 
-1. Build and publish the SOAR image, then replace the placeholder image tag with the immutable GHCR digest.
-2. Provision the same high-entropy HMAC secret on Wazuh Manager and as the Kubernetes Secret.
-3. Apply the Phase 4 manifests to the dedicated Phase 4 lab.
+1. Provision the same high-entropy HMAC secret on Wazuh Manager and as the Kubernetes Secret. Keep it outside Git and transfer it securely.
+2. Validate the target Phase 4 cluster context, Kubernetes v1.37.0 / Calico 3.33.0 compatibility, and the restricted:v1.33 PSS label before applying manifests.
+3. Apply the Phase 4 manifests to the dedicated Phase 4 lab. The verified image digest is already pinned, but no Deployment rollout has occurred.
 4. Prove Calico blocks both ingress and egress to quarantined Pods.
 5. Verify that application Services use the endpoint-eligibility selector and that quarantined Pods disappear from EndpointSlices.
 6. Execute the Wazuh Active Response path and confirm durable retry behavior during a controlled webhook outage.
@@ -110,6 +132,6 @@ The SOAR dataplane-attestation setting must remain false until the ingress, egre
 
 I opened [draft PR #2](https://github.com/serra-valle/Cybersecurity-portfolio/pull/2) against the Phase 3 branch. It is intentionally stacked on [Phase 3 PR #1](https://github.com/serra-valle/Cybersecurity-portfolio/pull/1), so Phase 3 should be merged first. Phase 4 can then be retargeted to `main`.
 
-The assigned target date was 13 November 2026. This report is dated 16 November 2026 and does not backdate implementation, deployment or acceptance.
+The assigned target date was 13 November 2026. This report is dated 17 November 2026 and does not backdate implementation, deployment or acceptance.
 
-**Current conclusion:** the Phase 4 source package and automated CI admission suite are prepared and passing. Live deployment, network containment, Wazuh integration and runtime evidence are still required before I can report full operational acceptance.
+**Current conclusion:** the Phase 4 source package, CI admission suite and immutable SOAR image supply chain are validated. The image digest is pinned but not deployed. Live deployment, network containment, Wazuh integration and runtime evidence are still required before I can report full operational acceptance.
