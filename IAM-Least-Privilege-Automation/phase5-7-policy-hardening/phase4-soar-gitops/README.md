@@ -2,7 +2,7 @@
 
 **Repository:** `serra-valle/Cybersecurity-portfolio`  
 **Delivery branch:** `aegis-phase4-soar-gitops-20261112`  
-**Status:** Source implementation and validation package prepared. Live deployment and runtime acceptance are not claimed.
+**Status:** Source, CI and immutable image supply chain validated. Phase 4 live deployment and runtime acceptance remain outstanding.
 
 ## Objective
 
@@ -12,7 +12,7 @@ This package is separate from the older `IAM-Least-Privilege-Automation/project-
 
 ## Architecture
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data-flow diagram and [docs/DEPLOYMENT_RUNBOOK.md](docs/DEPLOYMENT_RUNBOOK.md) for deployment steps. The consolidated [Phase 4 submission report](docs/PHASE4_SUBMISSION_REPORT.md) records delivered work, CI evidence and outstanding live acceptance gates.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data-flow diagram, [docs/DEPLOYMENT_RUNBOOK.md](docs/DEPLOYMENT_RUNBOOK.md) for deployment steps, and [docs/IMAGE_SECURITY_REVIEW.md](docs/IMAGE_SECURITY_REVIEW.md) for the verified container image, full Trivy results and provenance. The consolidated [Phase 4 submission report](docs/PHASE4_SUBMISSION_REPORT.md) records delivered work, CI evidence and outstanding live acceptance gates.
 
 ### Runtime response path
 
@@ -49,12 +49,12 @@ The read-only exporter polls the two Aegis constraint kinds, normalizes `status.
 - `wazuh/agent/`: JSON localfile collection fragment.
 - `wazuh/systemd/`: manager-side retry service and timer.
 - `ops/systemd/`: Kali port-forward, reverse tunnel and audit-exporter service units.
-- `docs/`: architecture, acceptance matrix, deployment runbook, submission report and status record.
+- `docs/`: architecture, acceptance matrix, deployment runbook, image security review, submission report and status record.
 - `.github/workflows/aegis-phase4-ci.yml`: Python tests, OPA regression, Falco rule validation and PSS/Gatekeeper admission tests.
 
 ## Important deployment gates
 
-1. The image reference in `platform/kubernetes/soar-deployment.yaml` is a placeholder. Build and publish the image, then replace it with the immutable GHCR digest before deployment.
+1. `platform/kubernetes/soar-deployment.yaml` now pins the verified immutable GHCR image digest. The image passed full Trivy scans on AMD64 and ARM64 and runtime smoke tests, but it has not been deployed. Do not replace the digest with a mutable tag.
 2. Create the HMAC secret outside Git. The same high-entropy secret must be installed on Wazuh Manager and mounted into the SOAR Deployment.
 3. Apply the existing Phase 2 ConstraintTemplates before the Phase 4 constraints.
 4. Keep `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=false` until both ingress and egress denial are demonstrated against quarantined Pods in the target Calico dataplane.
@@ -65,9 +65,11 @@ The read-only exporter polls the two Aegis constraint kinds, normalizes `status.
 
 ## Validation boundary
 
-[CI run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989) passed both automated validation jobs. It includes Python tests and syntax checks, XML parsing, OPA regression, Falco rule validation, Kustomize builds, and the PSS/Gatekeeper admission matrix in a disposable Kubernetes cluster.
+[CI run 44134158272](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272) passed all three jobs on commit `d262829cf0df0d9974b024edd9fd2699897035ed`. It includes the Python/OPA/Falco source checks, the Kubernetes 1.33.12 / Gatekeeper 3.23.1 admission matrix, and the multi-architecture image build. The image was smoke-tested on AMD64 and ARM64, scanned by Trivy 0.76.2 across all severities with zero vulnerability, misconfiguration or secret findings, and published with an SBOM and Sigstore-signed provenance. Its immutable digest is pinned in the Deployment manifest.
 
-These are source and CI admission tests only. No Phase 4 live cluster deployment, Calico packet-isolation test, SOAR webhook execution, Wazuh Active Response execution, Gatekeeper-to-Wazuh ingestion, or containment log is represented as completed in this repository. No synthetic output is presented as live evidence.
+The earlier [CI baseline run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989) is retained as historical source and policy validation evidence.
+
+These are source, image and CI admission tests only. No Phase 4 live cluster deployment, Calico packet-isolation test, SOAR webhook execution, Wazuh Active Response execution, Gatekeeper-to-Wazuh ingestion, or containment event is represented as completed in this repository. No synthetic output is presented as live evidence.
 
 The Phase 4 Falco driver mode has not been reverified in a live cluster. Do not describe this delivery as an eBPF-validated containment path until the deployed Falco driver is captured and confirmed.
 
@@ -78,3 +80,4 @@ See:
 - [Acceptance matrix](docs/ACCEPTANCE_MATRIX.md)
 - [Deployment runbook](docs/DEPLOYMENT_RUNBOOK.md)
 - [Delivery status](docs/DELIVERY_STATUS.md)
+- [Image security review](docs/IMAGE_SECURITY_REVIEW.md)
