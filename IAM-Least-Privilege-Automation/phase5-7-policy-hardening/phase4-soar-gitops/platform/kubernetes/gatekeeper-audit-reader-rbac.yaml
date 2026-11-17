@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aegis-gatekeeper-audit-reader
+  namespace: aegis-soar-system
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aegis-gatekeeper-audit-reader
+rules:
+  - apiGroups: ["constraints.gatekeeper.sh"]
+    resources:
+      - k8saegiscontainersecurity
+      - k8saegisimageintegrity
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: aegis-gatekeeper-audit-reader
+subjects:
+  - kind: ServiceAccount
+    name: aegis-gatekeeper-audit-reader
+    namespace: aegis-soar-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: aegis-gatekeeper-audit-reader

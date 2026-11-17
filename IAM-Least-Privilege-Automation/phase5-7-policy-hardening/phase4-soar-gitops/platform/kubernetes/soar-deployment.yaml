@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aegis-soar-config
+  namespace: aegis-soar-system
+data:
+  AEGIS_ALLOWED_AGENT: "kali-aegis-lab"
+  AEGIS_ALLOWED_RULE_IDS: "100501,100502"
+  AEGIS_EVICT_RULE_IDS: "100502"
+  AEGIS_ALLOWED_NAMESPACES: "aegis-policy-test,aegis-unified-policy"
+  AEGIS_DELETE_UNMANAGED_PODS: "false"
+  AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED: "false"
+  AEGIS_MAX_CLOCK_SKEW_SECONDS: "300"
+  AEGIS_MAX_REQUEST_BYTES: "1048576"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aegis-soar
+  namespace: aegis-soar-system
+  labels:
+    app.kubernetes.io/name: aegis-soar
+    app.kubernetes.io/component: response-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aegis-soar
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: aegis-soar
+        app.kubernetes.io/component: response-controller
+    spec:
+      serviceAccountName: aegis-soar
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: aegis-soar
+          image: ghcr.io/serra-valle/aegis-soar@sha256:7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: aegis-soar-config
+          env:
+            - name: AEGIS_HMAC_SECRET_FILE
+              value: /var/run/secrets/aegis-soar/key
+          volumeMounts:
+            - name: hmac-secret
+              mountPath: /var/run/secrets/aegis-soar
+              readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+      volumes:
+        - name: hmac-secret
+          secret:
+            secretName: aegis-soar-hmac
+            defaultMode: 0440
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aegis-soar
+  namespace: aegis-soar-system
+spec:
+  selector:
+    app.kubernetes.io/name: aegis-soar
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

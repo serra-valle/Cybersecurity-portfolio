@@ -1,0 +1,19 @@
+[Unit]
+Description=Aegis Gatekeeper persisted-violation audit exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=wazuh
+UMask=0027
+StateDirectory=aegis-gatekeeper-exporter
+StateDirectoryMode=0700
+EnvironmentFile=/etc/aegis-gatekeeper-exporter.env
+ExecStart=/usr/bin/python3 /opt/aegis-phase4/collectors/gatekeeper_audit_exporter.py --kubeconfig /etc/aegis-gatekeeper-exporter/kubeconfig --output /var/log/aegis/gatekeeper-audit.jsonl --state-file /var/lib/aegis-gatekeeper-exporter/state.json --interval 30
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

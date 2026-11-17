@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ossec_config>
+  <!-- Merge the command and active-response elements into the existing manager
+       ossec_config root. Do not replace the manager's complete ossec.conf. -->
+  <command>
+    <name>aegis-soar-enqueue</name>
+    <executable>aegis-soar-active-response.py</executable>
+    <timeout_allowed>no</timeout_allowed>
+  </command>
+
+  <active-response>
+    <command>aegis-soar-enqueue</command>
+    <location>server</location>
+    <rules_id>100501,100502</rules_id>
+  </active-response>
+</ossec_config>

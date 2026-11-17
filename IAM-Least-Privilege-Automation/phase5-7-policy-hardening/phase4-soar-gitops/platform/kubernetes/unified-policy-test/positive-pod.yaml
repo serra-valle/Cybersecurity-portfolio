@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: aegis-unified-positive
+  namespace: aegis-unified-policy
+  labels:
+    app: aegis-unified-positive
+    aegis.security/response-target: "true"
+    aegis.security/endpoint-enabled: "true"
+spec:
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: app
+      # Syntactically valid digest placeholder for server-side dry-run only.
+      # It is not a pullable image and must not be deployed.
+      image: registry.k8s.io/pause:3.10.1@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]

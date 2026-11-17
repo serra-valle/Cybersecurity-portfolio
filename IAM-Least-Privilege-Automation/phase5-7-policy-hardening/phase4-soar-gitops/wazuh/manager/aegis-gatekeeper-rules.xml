@@ -1,0 +1,17 @@
+<group name="aegis,gatekeeper,">
+  <rule id="100503" level="10">
+    <decoded_as>json</decoded_as>
+    <field name="aegis_gatekeeper_kind">K8sAegisContainerSecurity</field>
+    <field name="aegis_violation_status">active</field>
+    <description>Aegis Gatekeeper persisted container security violation: $(aegis_violation_namespace)/$(aegis_violation_name)</description>
+    <group>aegis,gatekeeper,container_security,</group>
+  </rule>
+
+  <rule id="100504" level="10">
+    <decoded_as>json</decoded_as>
+    <field name="aegis_gatekeeper_kind">K8sAegisImageIntegrity</field>
+    <field name="aegis_violation_status">active</field>
+    <description>Aegis Gatekeeper persisted image integrity violation: $(aegis_violation_namespace)/$(aegis_violation_name)</description>
+    <group>aegis,gatekeeper,image_integrity,</group>
+  </rule>
+</group>

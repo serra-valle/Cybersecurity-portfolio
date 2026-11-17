@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespaces.yaml
+  - unified-gatekeeper-constraints.yaml
+  - quarantine-network-policies.yaml
+  - soar-rbac.yaml
+  - gatekeeper-audit-reader-rbac.yaml
+  - soar-deployment.yaml
