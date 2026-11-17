@@ -368,15 +368,19 @@ jobs:
           for arch in amd64 arm64; do
             platform="linux/$arch"
             report="trivy-image-results-$arch.json"
-            trivy image --image-src remote --platform "$platform" --scanners vuln,misconfig,secret --severity HIGH,CRITICAL --format json --output "$report" "$IMAGE@$DIGEST"
+            trivy image --image-src remote --platform "$platform" --scanners vuln,misconfig,secret --format json --output "$report" "$IMAGE@$DIGEST"
             jq -r --arg arch "$arch" '
-              [.Results[]? | .Vulnerabilities[]? |
-                select(.Severity == "HIGH" or .Severity == "CRITICAL")] as $v |
+              [.Results[]? | .Vulnerabilities[]?] as $all |
               "### Trivy scan: linux/\($arch)",
-              "HIGH/CRITICAL vulnerability instances: \($v | length)",
-              "Unique CVEs: \($v | map(.VulnerabilityID) | unique | length)",
-              "With a published fix: \($v | map(select((.FixedVersion // "") != "")) | length)",
-              "Without a published fix: \($v | map(select((.FixedVersion // "") == "")) | length)"
+              "Vulnerability instances (all severities): \($all | length)",
+              "Unique CVEs (all severities): \($all | map(.VulnerabilityID) | unique | length)",
+              "UNKNOWN: \($all | map(select(.Severity == "UNKNOWN")) | length)",
+              "LOW: \($all | map(select(.Severity == "LOW")) | length)",
+              "MEDIUM: \($all | map(select(.Severity == "MEDIUM")) | length)",
+              "HIGH: \($all | map(select(.Severity == "HIGH")) | length)",
+              "CRITICAL: \($all | map(select(.Severity == "CRITICAL")) | length)",
+              "HIGH/CRITICAL with a published fix: \($all | map(select((.Severity == "HIGH" or .Severity == "CRITICAL") and ((.FixedVersion // "") != "")) | length)",
+              "HIGH/CRITICAL without a published fix: \($all | map(select((.Severity == "HIGH" or .Severity == "CRITICAL") and ((.FixedVersion // "") == "")) | length)"
             ' "$report" >> "$GITHUB_STEP_SUMMARY"
           done
 
