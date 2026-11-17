@@ -262,7 +262,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BASE_TAG="3.12.16-slim-trixie"
+          BASE_TAG="3.12.16-alpine3.24"
           BASE_REPOSITORY="library/python"
           TOKEN_JSON="$(curl --retry 3 --retry-all-errors --retry-delay 2 -fsSL --get \
             --data-urlencode "service=registry.docker.io" \
@@ -306,6 +306,44 @@ jobs:
           sbom: true
           provenance: mode=max
 
+      - name: Smoke-test published image under runtime restrictions
+        shell: bash
+        env:
+          IMAGE: ghcr.io/serra-valle/aegis-soar
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          for arch in amd64 arm64; do
+            container="aegis-soar-smoke-$arch"
+            port=18080
+            if [[ "$arch" == "arm64" ]]; then port=18081; fi
+            docker rm -f "$container" >/dev/null 2>&1 || true
+            docker pull --platform "linux/$arch" "$IMAGE@$DIGEST"
+            docker run -d --name "$container" --platform "linux/$arch" --read-only --tmpfs /tmp:rw,noexec,nosuid,nodev,size=16m --cap-drop ALL --security-opt no-new-privileges -p "127.0.0.1:$port:8080" "$IMAGE@$DIGEST"
+            trap 'docker rm -f aegis-soar-smoke-amd64 aegis-soar-smoke-arm64 >/dev/null 2>&1 || true' EXIT
+
+            image_user="$(docker inspect --format '{{.Config.User}}' "$container")"
+            [[ "$image_user" == "10001:10001" ]]
+
+            health_code=""
+            for attempt in $(seq 1 30); do
+              health_code="$(curl -sS -o "/tmp/aegis-healthz-$arch.json" -w '%{http_code}' "http://127.0.0.1:$port/healthz" 2>/dev/null || true)"
+              [[ "$health_code" == "200" ]] && break
+              sleep 1
+            done
+            if [[ "$health_code" != "200" ]]; then
+              docker logs "$container" || true
+              echo "ERROR: $arch /healthz did not return HTTP 200."
+              exit 1
+            fi
+            jq -e '.status == "ok"' "/tmp/aegis-healthz-$arch.json"
+
+            ready_code="$(curl -sS -o "/tmp/aegis-readyz-$arch.json" -w '%{http_code}' "http://127.0.0.1:$port/readyz")"
+            [[ "$ready_code" == "503" ]]
+            jq -e '.detail == "HMAC secret is unavailable"' "/tmp/aegis-readyz-$arch.json"
+            docker rm -f "$container" >/dev/null
+          done
+
       - name: Install verified Trivy scanner
         shell: bash
         run: |
@@ -319,7 +357,7 @@ jobs:
           sudo install -m 0755 trivy /usr/local/bin/trivy
           trivy --version
 
-      - name: Generate full Trivy vulnerability report
+      - name: Generate full Trivy reports for both architectures
         shell: bash
         env:
           IMAGE: ghcr.io/serra-valle/aegis-soar
@@ -327,34 +365,41 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$DIGEST"
-          trivy image --scanners vuln,misconfig,secret \
-            --severity HIGH,CRITICAL --format json \
-            --output trivy-image-results.json "$IMAGE@$DIGEST"
-          jq -r '
-            [.Results[]? | .Vulnerabilities[]? |
-              select(.Severity == "HIGH" or .Severity == "CRITICAL")] as $v |
-            "HIGH/CRITICAL vulnerability instances: \($v | length)",
-            "Unique CVEs: \($v | map(.VulnerabilityID) | unique | length)",
-            "With a published fix: \($v | map(select((.FixedVersion // "") != "")) | length)",
-            "Without a published fix: \($v | map(select((.FixedVersion // "") == "")) | length)"
-          ' trivy-image-results.json >> "$GITHUB_STEP_SUMMARY"
+          for arch in amd64 arm64; do
+            platform="linux/$arch"
+            report="trivy-image-results-$arch.json"
+            trivy image --image-src remote --platform "$platform" --scanners vuln,misconfig,secret --severity HIGH,CRITICAL --format json --output "$report" "$IMAGE@$DIGEST"
+            jq -r --arg arch "$arch" '
+              [.Results[]? | .Vulnerabilities[]? |
+                select(.Severity == "HIGH" or .Severity == "CRITICAL")] as $v |
+              "### Trivy scan: linux/\\($arch)",
+              "HIGH/CRITICAL vulnerability instances: \\($v | length)",
+              "Unique CVEs: \\($v | map(.VulnerabilityID) | unique | length)",
+              "With a published fix: \\($v | map(select((.FixedVersion // "") != "")) | length)",
+              "Without a published fix: \\($v | map(select((.FixedVersion // "") == "")) | length)"
+            ' "$report" >> "$GITHUB_STEP_SUMMARY"
+          done
 
-      - name: Fail on fixable HIGH/CRITICAL findings
+      - name: Fail on fixable HIGH/CRITICAL findings on both architectures
         shell: bash
         env:
           IMAGE: ghcr.io/serra-valle/aegis-soar
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           set -euo pipefail
-          trivy image --ignore-unfixed --scanners vuln,misconfig,secret \
-            --severity HIGH,CRITICAL --exit-code 1 "$IMAGE@$DIGEST"
+          for arch in amd64 arm64; do
+            echo "Enforcing Trivy gate for linux/$arch"
+            trivy image --image-src remote --platform "linux/$arch" --ignore-unfixed --scanners vuln,misconfig,secret --severity HIGH,CRITICAL --exit-code 1 "$IMAGE@$DIGEST"
+          done
 
       - name: Upload full Trivy report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: aegis-soar-trivy-report-${{ github.sha }}
-          path: trivy-image-results.json
+          path: |
+            trivy-image-results-amd64.json
+            trivy-image-results-arm64.json
           if-no-files-found: ignore
           retention-days: 30
 
@@ -374,10 +419,11 @@ jobs:
         run: |
           set -euo pipefail
           {
-            echo "### Aegis SOAR image published"
-            echo "- Immutable image: `$IMAGE@$DIGEST`"
-            echo "- Build base: `$BASE_IMAGE`"
-            echo "- Architectures: `linux/amd64, linux/arm64`"
-            echo "- SBOM and BuildKit provenance: attached"
-            echo "- Trivy: HIGH/CRITICAL findings fail this job"
+            printf '%s\\n' "### Aegis SOAR image published"
+            printf -- '- Immutable image: `%s@%s`\\n' "$IMAGE" "$DIGEST"
+            printf -- '- Build base: `%s`\\n' "$BASE_IMAGE"
+            printf -- '- Architectures: `linux/amd64, linux/arm64`\\n'
+            printf '%s\\n' "- Runtime smoke tests: passed on amd64 and arm64 with non-root, read-only root filesystem, no capabilities, and no-new-privileges"
+            printf '%s\\n' "- SBOM and signed provenance: attached"
+            printf '%s\\n' "- Trivy: fixable HIGH/CRITICAL findings fail the job on both architectures; full reports are retained"
           } >> "$GITHUB_STEP_SUMMARY"
