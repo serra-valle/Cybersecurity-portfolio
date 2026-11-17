@@ -1,6 +1,6 @@
 # Aegis Phase 4 Delivery Status
 
-**Status date:** 16 November 2026  
+**Status date:** 17 November 2026  
 **Assigned target date:** Friday, 13 November 2026  
 **Overall state:** Source implementation and CI validation package prepared; live runtime acceptance outstanding.
 
@@ -9,6 +9,7 @@
 | Workstream | Source package | Automated validation | Live acceptance |
 |---|---|---|---|
 | SOAR FastAPI webhook and HMAC verification | Implemented in branch | 19 Python unit tests passed in CI | Not deployed |
+| SOAR container supply chain | Non-root Dockerfile hardened; `.dockerignore` and multi-architecture build workflow authored | Build, Trivy HIGH/CRITICAL scan, SBOM and provenance steps defined; no successful run observed yet | Image not yet approved, digest not pinned |
 | Kubernetes quarantine and immediate unmanaged-Pod eviction | Implemented in branch | Mocked API tests passed in CI | Not tested against target cluster |
 | Default-deny NetworkPolicies and namespace-scoped RBAC | Manifests authored | Kustomize build passed in CI | Calico enforcement not attested |
 | Wazuh Active Response and durable retry queue | Scripts and config fragments authored | Python compile check passed in CI | Not installed or executed |
@@ -37,7 +38,7 @@ The current branch subsequently received documentation-only status updates. The 
 
 ## Explicit release blockers
 
-1. The SOAR image has not been built or published. The Deployment image is a placeholder and must be replaced with an immutable digest.
+1. The SOAR image workflow is authored but has not yet produced a verified successful run. The Deployment image remains a placeholder and must be replaced with the immutable digest from a passing build and scan.
 2. The HMAC secret has not been provisioned on Wazuh Manager or in Kubernetes.
 3. The Phase 4 manifests have not been applied to the target cluster.
 4. Calico ingress and egress denial have not been demonstrated. `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED` therefore remains false.
