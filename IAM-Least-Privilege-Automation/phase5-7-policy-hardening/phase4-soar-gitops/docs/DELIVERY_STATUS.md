@@ -2,24 +2,33 @@
 
 **Status date:** 17 November 2026  
 **Assigned target date:** Friday, 13 November 2026  
-**Overall state:** Source implementation, automated CI, and the immutable SOAR image supply chain are validated; live runtime acceptance remains outstanding.
+**Overall state:** Source implementation, automated CI, immutable SOAR image supply chain, and Gatekeeper policy enforcement in the dedicated Phase 4 lab are verified. SOAR containment and Wazuh integration remain unaccepted.
 
 ## Status summary
 
 | Workstream | Source package | Automated validation | Live acceptance |
 |---|---|---|---|
-| SOAR FastAPI webhook and HMAC verification | Implemented in branch | 19 Python unit tests passed in CI | Not deployed |
+| SOAR FastAPI webhook and HMAC verification | Implemented in branch | 16 SOAR unit tests passed in code validation run 44142985557 | Not deployed; HMAC secret not provisioned |
 | SOAR container supply chain | Alpine 3.24.4 base pinned by digest; pip removed from runtime; non-root image built for AMD64 and ARM64 | Original manifest-pinned image and consolidated-head rebuild both passed full Trivy scans with zero findings, runtime smoke tests, SBOM and signed provenance; runs 44134158272 and 44137127343 | Verified digest pinned in manifest; not deployed |
 | Kubernetes quarantine and immediate unmanaged-Pod eviction | Implemented in branch | Mocked API tests passed in CI | Not tested against target cluster |
 | Default-deny NetworkPolicies and namespace-scoped RBAC | Manifests authored | Kustomize build passed in CI | Calico enforcement not attested |
 | Wazuh Active Response and durable retry queue | Scripts and config fragments authored | Python compile check passed in CI | Not installed or executed |
-| Gatekeeper audit exporter | Read-only exporter with atomic checkpoint, completed-audit validation, truncation detection and transition handling | 12 collector tests passed in CI run 44142985557 | Not connected to live Gatekeeper API |
+| Gatekeeper audit exporter | Read-only exporter with atomic checkpoint, completed-audit validation, truncation detection and transition handling | 12 collector tests passed in CI run 44142985557 and local regression | Live Gatekeeper audit snapshots retrieved; exporter service not deployed |
 | Wazuh Gatekeeper rules 100503/100504 | XML source authored | XML parse check passed in CI | Not installed or verified |
 | Falco rule GitOps | Rule source and ConfigMap generator authored | Falco 0.45.0 rule validation and Kustomize build passed in CI | Live Helm/ConfigMap reconciliation not performed |
-| PSS + Gatekeeper unified namespace | Namespace, constraints and test fixtures authored | Full admission matrix passed in CI | Not applied to target cluster |
+| PSS + Gatekeeper unified namespace | Namespace and constraints applied in `kind-aegis-phase4-lab` | CI admission matrix and Phase 4 server-side dry-run admission tests passed | Gatekeeper enforcement verified; no SOAR Deployment rollout |
 | OPA regression | Existing Aegis Rego suite | OPA 0.62.1 passed 10/10 in CI | N/A |
 | Falco driver / eBPF mode | No Phase 4 driver evidence | Not covered by rule syntax validation | Not verified |
-| Evidence/report | Architecture, matrix, runbook, image security review and status documents authored | N/A | No Phase 4 runtime logs exist |
+| Evidence/report | Architecture, matrix, runbook, image security review and status documents authored | CI and local regression evidence retained | Gatekeeper admission and audit snapshot evidence captured; no SOAR containment logs |
+
+
+## Phase 4 lab verification
+
+The dedicated `kind-aegis-phase4-lab` is Kubernetes v1.37.0 with Calico 3.33.0. Gatekeeper 3.23.1 was installed and its controller and audit deployments became healthy. The existing Phase 2 ConstraintTemplates were applied and both Phase 4 constraints were created in `aegis-unified-policy` only.
+
+The positive secure Pod was admitted by server-side dry run. The writable-root-filesystem and tag-only-image fixtures were denied by the Gatekeeper validation webhook. The privileged fixture was denied by native Pod Security Admission. Both constraints reported `enforced: true` across Gatekeeper pods. Gatekeeper audit snapshots were retrieved for both constraints and reported zero violations at the observed timestamp.
+
+These results verify Gatekeeper installation, policy admission and audit API operation. They do not verify exporter service deployment, Wazuh ingestion, SOAR response or Calico dataplane isolation.
 
 ## CI evidence
 
@@ -86,18 +95,18 @@ This is a separately verified rebuild. It has not been promoted into the Deploym
 ## Explicit release blockers
 
 1. The HMAC secret has not been provisioned on Wazuh Manager or in Kubernetes. The same high-entropy key must be transferred securely and kept outside Git.
-2. The Phase 4 manifests have not been applied to the target cluster. The image digest is pinned, but there has been no Deployment rollout.
+2. The Gatekeeper templates, unified constraints and namespaces have been applied to the dedicated Phase 4 lab. The SOAR Deployment has not been rolled out.
 3. Calico ingress and egress denial have not been demonstrated. `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED` therefore remains false.
 4. The endpoint-selector contract has not been verified against application Services and EndpointSlices.
-5. Wazuh Active Response, durable delivery, Gatekeeper JSONL ingestion, and rules 100503/100504 have not been run end to end.
+5. Wazuh Active Response, durable delivery, Gatekeeper JSONL ingestion, and rules 100503/100504 have not been run end to end. The AWS-hosted Manager is unavailable because the account is closed.
 6. Falco's declarative ConfigMap has not been reconciled with the live Helm release.
 7. The deployed Falco driver mode has not been captured. Do not claim an eBPF-backed Phase 4 runtime path until this is verified.
 8. Genuine end-to-end containment logs have not been captured because no Phase 4 containment event has been executed.
 
-The deployment configuration must keep `AEGIS_DELETE_UNMANAGED_PODS=false` and `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=false` until the live safety and dataplane acceptance tests pass.
+The deployment configuration must keep `AEGIS_DELETE_UNMANAGED_PODS=false` and `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=false` until the live safety and dataplane acceptance tests pass. The AWS-hosted Wazuh Manager is unavailable because the AWS account is closed; Wazuh delivery cannot be validated against that environment.
 
 ## Evidence integrity
 
 No fabricated containment logs, synthetic Wazuh alerts, invented Falco events, or unverified screenshots are included. The Phase 3 observations are cited only as historical Phase 3 evidence and are not presented as Phase 4 acceptance.
 
-The assigned target date has passed. This status is dated 17 November 2026 and does not backdate completion or acceptance.
+The assigned target date has passed. This status is dated 17 November 2026 and does not backdate completion or acceptance. The Gatekeeper runtime results were added after the original CI-only report and are described separately from CI.
