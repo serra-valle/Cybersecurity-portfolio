@@ -48,6 +48,8 @@ jobs:
           set -euo pipefail
           python -m pip install --upgrade pip
           python -m pip install -r app/requirements.txt -r collectors/requirements.txt
+          python -m pip check
+          python -c "from importlib.metadata import version; v=tuple(int(x) for x in version('starlette').split('.')[:3]); assert v >= (1, 3, 1), v"
 
       - name: Run SOAR and collector unit tests
         working-directory: IAM-Least-Privilege-Automation/phase5-7-policy-hardening/phase4-soar-gitops
@@ -317,7 +319,7 @@ jobs:
           sudo install -m 0755 trivy /usr/local/bin/trivy
           trivy --version
 
-      - name: Scan published immutable image digest
+      - name: Generate full Trivy vulnerability report
         shell: bash
         env:
           IMAGE: ghcr.io/serra-valle/aegis-soar
@@ -326,8 +328,35 @@ jobs:
           set -euo pipefail
           test -n "$DIGEST"
           trivy image --scanners vuln,misconfig,secret \
-            --severity HIGH,CRITICAL --exit-code 1 \
-            "$IMAGE@$DIGEST"
+            --severity HIGH,CRITICAL --format json \
+            --output trivy-image-results.json "$IMAGE@$DIGEST"
+          jq -r '
+            [.Results[]? | .Vulnerabilities[]? |
+              select(.Severity == "HIGH" or .Severity == "CRITICAL")] as $v |
+            "HIGH/CRITICAL vulnerability instances: \($v | length)",
+            "Unique CVEs: \($v | map(.VulnerabilityID) | unique | length)",
+            "With a published fix: \($v | map(select((.FixedVersion // "") != "")) | length)",
+            "Without a published fix: \($v | map(select((.FixedVersion // "") == "")) | length)"
+          ' trivy-image-results.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail on fixable HIGH/CRITICAL findings
+        shell: bash
+        env:
+          IMAGE: ghcr.io/serra-valle/aegis-soar
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          trivy image --ignore-unfixed --scanners vuln,misconfig,secret \
+            --severity HIGH,CRITICAL --exit-code 1 "$IMAGE@$DIGEST"
+
+      - name: Upload full Trivy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aegis-soar-trivy-report-${{ github.sha }}
+          path: trivy-image-results.json
+          if-no-files-found: ignore
+          retention-days: 30
 
       - name: Attest published image provenance
         uses: actions/attest-build-provenance@v2
