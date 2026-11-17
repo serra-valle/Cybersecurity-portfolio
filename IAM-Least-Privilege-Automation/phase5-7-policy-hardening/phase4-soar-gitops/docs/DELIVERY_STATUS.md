@@ -2,14 +2,14 @@
 
 **Status date:** 17 November 2026  
 **Assigned target date:** Friday, 13 November 2026  
-**Overall state:** Source implementation and CI validation package prepared; live runtime acceptance outstanding.
+**Overall state:** Source implementation, automated CI, and the immutable SOAR image supply chain are validated; live runtime acceptance remains outstanding.
 
 ## Status summary
 
 | Workstream | Source package | Automated validation | Live acceptance |
 |---|---|---|---|
 | SOAR FastAPI webhook and HMAC verification | Implemented in branch | 19 Python unit tests passed in CI | Not deployed |
-| SOAR container supply chain | Non-root Dockerfile hardened; `.dockerignore` and multi-architecture build workflow authored | Image job integrated into Phase 4 CI after source and admission checks; first image-job result pending | Image not yet approved, digest not pinned |
+| SOAR container supply chain | Alpine 3.24.4 base pinned by digest; pip removed from runtime; non-root image built for AMD64 and ARM64 | Full Trivy scan: zero findings at all severities on both architectures; runtime smoke tests, SBOM and signed provenance passed in CI run 44134158272 | Verified digest pinned in manifest; not deployed |
 | Kubernetes quarantine and immediate unmanaged-Pod eviction | Implemented in branch | Mocked API tests passed in CI | Not tested against target cluster |
 | Default-deny NetworkPolicies and namespace-scoped RBAC | Manifests authored | Kustomize build passed in CI | Calico enforcement not attested |
 | Wazuh Active Response and durable retry queue | Scripts and config fragments authored | Python compile check passed in CI | Not installed or executed |
@@ -36,19 +36,39 @@ Both jobs passed:
 
 The current branch subsequently received documentation-only status updates. The successful run validates the application, manifests, fixtures and workflow implementation. These checks are CI admission and source tests, not deployment or runtime network-isolation tests.
 
+
+### Latest full validation and image-supply-chain run
+
+**GitHub Actions:** [Run 44134158272](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272)  
+**Commit:** `d262829cf0df0d9974b024edd9fd2699897035ed`  
+**Verified image:** `ghcr.io/serra-valle/aegis-soar@sha256:7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc`  
+**Pinned build base:** `python:3.12.16-alpine3.24@sha256:c5ba3deef00c7758561a0f03c26f44f10589263d40e732b8748e0d1f38f6dd89`
+
+All three workflow jobs passed: Python/OPA/Falco validation, the unified PSS/Gatekeeper admission matrix, and the multi-architecture image pipeline. The image pipeline:
+
+- Built and published `linux/amd64` and `linux/arm64` images.
+- Ran both images as UID/GID 10001 with a read-only root filesystem, all capabilities dropped, and no-new-privileges. Both `/healthz` checks returned HTTP 200. Both `/readyz` checks returned the expected HTTP 503 while the HMAC secret was absent, confirming fail-closed readiness.
+- Scanned both architecture manifests with Trivy 0.76.2 across all severities and vulnerability, misconfiguration and secret scanners. Each report contained zero findings.
+- Uploaded the full per-architecture JSON reports as workflow artifact [14351327524](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272).
+- Attached the BuildKit SBOM and created a Sigstore-signed provenance attestation. The attestation was uploaded to [GitHub](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68730154), GHCR and the [Rekor transparency log](https://search.sigstore.dev?logIndex=3949778857).
+
+The verified digest is pinned in `platform/kubernetes/soar-deployment.yaml`. This is an artifact promotion decision only. No Phase 4 cluster deployment or containment action has been performed.
+
 ## Explicit release blockers
 
-1. The SOAR image workflow is authored but has not yet produced a verified successful run. The Deployment image remains a placeholder and must be replaced with the immutable digest from a passing build and scan.
-2. The HMAC secret has not been provisioned on Wazuh Manager or in Kubernetes.
-3. The Phase 4 manifests have not been applied to the target cluster.
-4. Calico ingress and egress denial have not been demonstrated. `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED` therefore remains false.
-5. The endpoint-selector contract has not been verified against application Services and EndpointSlices.
-6. Wazuh Active Response, durable delivery, Gatekeeper JSONL ingestion, and rules 100503/100504 have not been run end to end.
-7. Falco's declarative ConfigMap has not been reconciled with the live Helm release.
-8. The deployed Falco driver mode has not been captured. Do not claim an eBPF-backed Phase 4 runtime path until this is verified.
+1. The HMAC secret has not been provisioned on Wazuh Manager or in Kubernetes. The same high-entropy key must be transferred securely and kept outside Git.
+2. The Phase 4 manifests have not been applied to the target cluster. The image digest is pinned, but there has been no Deployment rollout.
+3. Calico ingress and egress denial have not been demonstrated. `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED` therefore remains false.
+4. The endpoint-selector contract has not been verified against application Services and EndpointSlices.
+5. Wazuh Active Response, durable delivery, Gatekeeper JSONL ingestion, and rules 100503/100504 have not been run end to end.
+6. Falco's declarative ConfigMap has not been reconciled with the live Helm release.
+7. The deployed Falco driver mode has not been captured. Do not claim an eBPF-backed Phase 4 runtime path until this is verified.
+8. Genuine end-to-end containment logs have not been captured because no Phase 4 containment event has been executed.
+
+The deployment configuration must keep `AEGIS_DELETE_UNMANAGED_PODS=false` and `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=false` until the live safety and dataplane acceptance tests pass.
 
 ## Evidence integrity
 
 No fabricated containment logs, synthetic Wazuh alerts, invented Falco events, or unverified screenshots are included. The Phase 3 observations are cited only as historical Phase 3 evidence and are not presented as Phase 4 acceptance.
 
-The assigned target date has passed. This status is dated 16 November 2026 and does not backdate completion or acceptance.
+The assigned target date has passed. This status is dated 17 November 2026 and does not backdate completion or acceptance.
