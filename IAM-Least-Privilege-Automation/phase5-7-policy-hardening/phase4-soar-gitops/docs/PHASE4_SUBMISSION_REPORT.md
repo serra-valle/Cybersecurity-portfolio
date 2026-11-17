@@ -1,4 +1,4 @@
-# Aegis Guardrail Phase 4 Delivery Report
+# Aegis Guardrail Phase 4 Engineering Delivery Report
 
 **Prepared:** 17 November 2026  
 **Prepared by:** Security Engineering  
@@ -8,146 +8,402 @@
 
 ## 1. Executive summary
 
-I prepared the Phase 4 implementation package for automated Kubernetes response, Gatekeeper audit telemetry and declarative policy delivery. The package now includes the SOAR webhook, Kubernetes response controls, Wazuh Active Response integration files, Gatekeeper audit exporter, Falco rule source, unified PSS and Gatekeeper policy fixtures, CI validation and deployment documentation.
+Phase 4 expanded Aegis Guardrail from policy validation and security telemetry into a broader Kubernetes security engineering platform. The work brought together automated response design, Kubernetes workload controls, Wazuh integration, Gatekeeper audit collection, Falco rule delivery, policy-as-code, container hardening, multi-architecture image publishing, software supply-chain evidence and repeatable CI validation.
 
-The automated source, policy admission and multi-architecture image checks passed in GitHub Actions. I built and scanned the SOAR image, tested its hardened runtime behavior on both architectures, attached an SBOM and signed provenance, and pinned the approved digest in the Deployment manifest. I subsequently installed Gatekeeper 3.23.1 in the dedicated Phase 4 Kind lab (Kubernetes v1.37.0 / Calico 3.33.0), applied the Phase 4 templates and unified constraints, and verified actual admission-webhook enforcement with positive and negative server-side dry-run tests. The SOAR Deployment and end-to-end Wazuh-to-SOAR containment path have not been deployed or validated. The AWS-hosted Wazuh Manager is unavailable because the AWS account is closed. I distinguish these runtime results and limitations from the CI evidence.
+I implemented the FastAPI SOAR service and its response safeguards, built the Wazuh Active Response and durable delivery components, developed a Gatekeeper audit exporter with persistent state and resolution tracking, and authored the Kubernetes and Falco GitOps resources. I also established a dedicated Phase 4 Kind environment, recovered and stabilized its Calico networking components, installed Gatekeeper, applied the unified policy controls and verified the expected admission decisions against the live admission webhooks.
 
-## 2. Work delivered
+A major part of the delivery was the SOAR container supply chain. I replaced the initial base image after identifying 47 HIGH OS-package findings across 11 CVEs, hardened the runtime, published AMD64 and ARM64 images, completed full Trivy scans on the approved builds, generated an SBOM and published Sigstore-signed provenance. The deployment references an immutable image digest rather than a mutable tag.
 
-### 2.1 SOAR webhook and Kubernetes response
+The code and policy work is backed by automated tests and repeated GitHub Actions validation. The latest consolidated code validation recorded 16 SOAR tests, 12 exporter tests and 10/10 OPA regression tests passing, alongside Python compilation, Wazuh XML parsing, Falco rule validation, Kustomize builds and the disposable-cluster admission matrix. The dedicated Phase 4 lab then provided additional live Kubernetes admission and Gatekeeper audit evidence.
 
-I extended the FastAPI service with:
+The remaining work is concentrated in connecting the completed components to restored Wazuh infrastructure and completing live containment acceptance. Those integration steps are recorded separately so the report accurately distinguishes implementation, automated validation and lab verification from operational deployment.
 
-- HMAC-SHA256 request authentication and timestamp validation.
-- A request-size limit and strict agent, Wazuh rule ID and namespace allowlists.
-- Kubernetes API access through a dedicated ServiceAccount.
-- A precondition check for the named quarantine NetworkPolicy. The policy must select the quarantine label, include both ingress and egress policy types, and contain no allow rules.
-- Pod quarantine labels and audit annotations.
-- A separate endpoint-eligibility label so Services configured with the required selector can remove quarantined Pods from their EndpointSlices.
-- Immediate zero-second deletion for the configured high-risk rule 100502, limited to unmanaged response-target Pods.
+## 2. Objectives and engineering scope
 
-I kept controller-managed Pods out of the deletion path. Deleting a controller-owned Pod without changing its workload template can result in an unquarantined replacement. Those Pods are quarantined and preserved instead.
+The Phase 4 assignment focused on five connected outcomes:
 
-The service fails closed while NetworkPolicy dataplane enforcement is not attested. The deployment configuration currently leaves `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=false`.
+1. **Automated Kubernetes response:** receive authenticated Wazuh alerts, validate their origin and scope, and apply controlled quarantine actions to approved Pods.
+2. **Gatekeeper audit telemetry:** collect persisted constraint violations, normalize them into structured events and make them available for Wazuh analysis.
+3. **Declarative policy delivery:** manage Falco rules, Kubernetes resources, response policies and unified admission controls as version-controlled artifacts.
+4. **Unified workload security:** combine native Pod Security Admission with the existing Aegis Gatekeeper controls.
+5. **Repeatable validation and evidence:** test application behavior, policy decisions, deployment artifacts and container supply-chain controls through CI and a dedicated Kubernetes lab.
 
-### 2.2 Wazuh Active Response delivery
+The implementation reused the established Phase 2 Gatekeeper ConstraintTemplates and Phase 3 Wazuh detection foundation. Phase 4 kept the earlier project work intact while adding a separate lab, response architecture and delivery branch.
 
-I added a Wazuh Active Response script that accepts only the configured agent and rules 100501/100502, then writes the alert to a durable local spool. A separate dispatcher retries delivery and signs the request with the shared HMAC key.
+## 3. Architecture and event flow
 
-The connection is designed around a loopback-only manager listener, a reverse SSH tunnel initiated from Kali, and a local Kubernetes port-forward. The webhook is not designed to be exposed publicly.
+The solution is organized around two related event paths.
 
-The Active Response and dispatcher files are source-controlled. They have not been installed or executed on the live Wazuh Manager.
+### 3.1 Runtime detection and response path
 
-### 2.3 Gatekeeper audit telemetry
+```text
+Falco / Wazuh detection
+        |
+        v
+Wazuh Active Response (rules 100501 / 100502)
+        |
+        v
+Durable local alert spool
+        |
+        v
+Retrying dispatcher + HMAC-SHA256 request
+        |
+        v
+Private tunnel / local Kubernetes forwarding
+        |
+        v
+FastAPI SOAR webhook
+        |
+        v
+Authentication, timestamp, allowlist and safety checks
+        |
+        v
+Kubernetes API via dedicated ServiceAccount/RBAC
+        |
+        v
+Quarantine labels, endpoint eligibility and controlled response
+        |
+        +----> NetworkPolicy enforcement
+        |
+        +----> Service EndpointSlice exclusion
+```
 
-I added a read-only exporter for:
+The design keeps the webhook private rather than exposing it publicly. The manager-side listener is intended to bind to loopback, with a reverse SSH tunnel from Kali and a local Kubernetes port-forward providing the controlled path.
+
+### 3.2 Gatekeeper audit telemetry path
+
+```text
+Gatekeeper constraint audit status
+        |
+        v
+Read-only Gatekeeper audit exporter
+        |
+        v
+Snapshot validation + state/checkpoint comparison
+        |
+        v
+Normalized JSONL active / resolved events
+        |
+        v
+Wazuh agent localfile collection
+        |
+        v
+Wazuh rules 100503 / 100504
+```
+
+The exporter reads persisted audit results from the two Aegis constraint kinds, validates snapshot completeness and tracks changes between observations. The Wazuh rules and localfile configuration are included in the delivery package.
+
+## 4. SOAR webhook and Kubernetes response engineering
+
+I extended the FastAPI service with a security-focused request and response workflow.
+
+### 4.1 Request authentication and validation
+
+The webhook implements:
+
+- HMAC-SHA256 request authentication.
+- Timestamp validation to reject stale requests.
+- Request-size restrictions.
+- Explicit allowlists for the Wazuh agent, rule IDs and Kubernetes namespace.
+- Validation of the response target before any Kubernetes mutation.
+- Fail-closed behavior when required security prerequisites are not attested.
+
+The accepted response rules are 100501 and 100502, scoped to the configured lab agent and approved namespace. These controls reduce the chance that an arbitrary or replayed request can trigger a Kubernetes action.
+
+### 4.2 Kubernetes identity and permissions
+
+The service uses a dedicated Kubernetes ServiceAccount and scoped RBAC rather than a cluster-admin identity. The manifests define the service-side permissions and the namespace resources required by the response workflow.
+
+### 4.3 Quarantine and workload safeguards
+
+The response logic applies quarantine labels and audit annotations to eligible Pods. It separately changes endpoint eligibility so Services configured with the required selector can remove quarantined workloads from their EndpointSlices.
+
+Before changing a workload, the service checks for the named quarantine NetworkPolicy. The policy must select the quarantine label, include both ingress and egress policy types and contain no allow rules. The service also checks the dataplane-attestation setting before enabling destructive response.
+
+Controller-managed Pods are deliberately excluded from the deletion path. Deleting a controller-owned Pod without updating its workload template can cause the controller to recreate it without the quarantine state. Such Pods are quarantined and preserved. Immediate zero-second deletion is limited to configured high-risk rule 100502 and unmanaged response-target Pods.
+
+The current configuration keeps `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=false`. This is an intentional safety control until live ingress, egress and EndpointSlice tests establish the expected dataplane behavior.
+
+### 4.4 Application validation
+
+The SOAR application suite passed **16 tests** in consolidated code validation run [44142985557](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44142985557). The tests exercise the implemented request and response behavior at the application/test boundary. They are not represented as proof of live Kubernetes containment.
+
+## 5. Wazuh Active Response and reliable delivery
+
+I added the Wazuh Active Response integration script for the configured agent and detection rules 100501/100502. Rather than relying on a single synchronous network request, the script writes accepted alerts to a durable local spool.
+
+A separate dispatcher reads the queued events, retries delivery and signs requests with the shared HMAC key. This separates alert capture from webhook availability and provides a recoverable delivery path during tunnel or service interruptions.
+
+The private connectivity design uses:
+
+- A loopback-only listener on the Wazuh Manager.
+- A reverse SSH tunnel initiated from Kali.
+- A local Kubernetes port-forward to the SOAR service.
+- A shared high-entropy HMAC key stored outside source control.
+
+The Active Response and dispatcher scripts are included in the repository and passed Python compilation in CI. Wazuh configuration fragments are included and passed XML parsing. The scripts have not yet been installed and exercised on a restored live Manager, so this report does not claim live alert delivery.
+
+## 6. Gatekeeper audit exporter and telemetry engineering
+
+I developed `collectors/gatekeeper_audit_exporter.py` to turn Gatekeeper's persisted audit status into structured events suitable for downstream monitoring.
+
+### 6.1 Supported constraints and event model
+
+The exporter reads:
 
 - `K8sAegisContainerSecurity`
 - `K8sAegisImageIntegrity`
 
-The exporter reads persisted Gatekeeper constraint violations, normalizes them to JSONL, and emits resolution records when a previously observed violation disappears. Wazuh localfile collection and custom rules 100503/100504 are included.
+It validates the constraint status fields, including `status.auditTimestamp`, `status.totalViolations` and `status.violations`, before treating a snapshot as suitable for state transitions. Findings are normalized into JSONL records. The exporter emits active and resolved transitions so that a violation disappearing from a later complete audit can be represented explicitly.
 
-The exporter has 12 passing unit tests covering normalization, checkpoint persistence, duplicate replay, resolution transitions, truncated snapshots and failure handling. Gatekeeper audit snapshots were also read successfully from the live Phase 4 constraints. The exporter service itself has not been deployed, and Wazuh agent ingestion and manager alert generation remain outstanding because the AWS-hosted Manager is unavailable.
+### 6.2 State integrity and reliability controls
 
-### 2.4 Falco and policy GitOps
+The implementation includes:
 
-I added a Phase 4 Falco rule source and a ConfigMap generator. The write rule retains the existing Aegis rule identity and extends its scope to the Phase 4 response-target workload. The built-in Falco `Terminal shell in container` rule remains the event source for rule 100502.
+- Persistent checkpoint state at `/var/lib/aegis-gatekeeper-exporter/state.json`.
+- Atomic checkpoint replacement and filesystem synchronization.
+- Restrictive state-file permissions.
+- Append-only JSONL output with `O_NOFOLLOW`, synchronization and controlled file permissions.
+- Duplicate replay protection.
+- Active-to-resolved transition tracking.
+- Validation that prevents incomplete, malformed or truncated snapshots from falsely resolving previously observed findings.
 
-I also added declarative Kubernetes namespaces, RBAC, quarantine NetworkPolicies, the SOAR Deployment and the unified Gatekeeper constraints. The existing Phase 2 ConstraintTemplates remain the canonical templates and are reused without changing the older project directory.
+Gatekeeper can limit the number of violation details retained in constraint status. The exporter therefore compares the reported total with the returned violation records and avoids inferring that omitted findings have been resolved when a snapshot is incomplete.
 
-The Falco ConfigMap has not been reconciled into the live Helm release. The deployment operator must merge it with the current chart configuration and avoid loading a duplicate copy of the existing write rule.
+### 6.3 Testing and live API evidence
 
-### 2.5 Unified PSS and Gatekeeper controls
+The exporter suite passed **12 tests** in CI run [44142985557](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44142985557) and in local regression. The tests cover normalization, checkpoint persistence, duplicate replay, resolution transitions, truncated snapshots and failure handling.
 
-I defined `aegis-unified-policy` with native Pod Security Admission `restricted:v1.33` and both Aegis Gatekeeper constraints.
+Separately, I retrieved actual audit snapshots from both Phase 4 constraints in the dedicated lab. The snapshots contained audit timestamps and reported zero violations at the recorded observation. This verifies that Gatekeeper audit status was available through the Kubernetes API. The exporter systemd service and downstream Wazuh JSONL ingestion are deployment-stage work.
 
-The CI admission matrix covered:
+## 7. Dedicated Kubernetes lab, Calico and unified policy enforcement
 
-| Test | Expected result | CI result |
+### 7.1 Dedicated Phase 4 environment
+
+I established a separate Kind environment to isolate Phase 4 testing from the earlier Phase 3 cluster:
+
+| Component | Phase 4 lab |
+|---|---|
+| Kubernetes | v1.37.0 |
+| Container runtime | containerd 2.3.4 |
+| CNI | Calico 3.33.0 |
+| Policy engine | Gatekeeper 3.23.1 |
+| Cluster context | `kind-aegis-phase4-lab` |
+
+The lab build required recovery work during Calico installation, including investigation of webhook service refusal, readiness and liveness timeouts, Pod sandbox recreation and TLS/readiness issues. The cluster was subsequently brought to a Ready state, with the principal Calico components available and Gatekeeper controller and audit deployments healthy.
+
+This work established the dedicated environment used for the subsequent Phase 4 policy installation and admission tests. Calico policy dataplane isolation is assessed separately from CNI installation health.
+
+### 7.2 Unified PSS and Gatekeeper policy
+
+I created the `aegis-unified-policy` namespace with native Pod Security Admission set to `restricted:v1.33`. The namespace is protected by both Aegis constraints:
+
+- `aegis-unified-container-security`
+- `aegis-unified-image-integrity`
+
+The Phase 2 ConstraintTemplates were reused as the canonical policy definitions. The Phase 4 constraints were scoped to the unified policy namespace, keeping the earlier Phase 3 and Phase 2 test environments separate.
+
+### 7.3 Admission verification
+
+The admission matrix exercised four meaningful outcomes:
+
+| Workload fixture | Expected enforcement | Observed result |
 |---|---|---|
-| Secure non-root Pod, read-only root filesystem and digest-pinned image | Admitted by PSS and Gatekeeper | Passed |
-| Privileged Pod | Rejected by native PSS | Passed |
-| PSS-compatible Pod with writable root filesystem | Rejected by Gatekeeper | Passed |
-| PSS-compatible Pod with tag-only image | Rejected by Gatekeeper | Passed |
+| Secure non-root Pod, read-only root filesystem and digest-pinned image | Admitted | Admitted |
+| Privileged Pod | Native restricted PSS denial | Denied by Pod Security Admission |
+| PSS-compatible Pod with writable root filesystem | Gatekeeper container-security denial | Denied by Gatekeeper validation webhook |
+| PSS-compatible Pod with tag-only image | Gatekeeper image-integrity denial | Denied by Gatekeeper validation webhook |
 
-These CI checks were server-side dry-run admission tests in a disposable cluster. The positive fixture uses a syntactically valid placeholder digest and is not a pullable image. I subsequently repeated the positive and negative admission checks against the dedicated Phase 4 lab: the secure Pod was admitted; writable-root-filesystem and tag-only-image Pods were rejected by the Gatekeeper validation webhook; and the privileged Pod was rejected by native Pod Security Admission. The Phase 4 constraints report `enforced: true` across the Gatekeeper pods. The audit controller also produced timestamped snapshots for both constraints, with zero violations at the recorded observation. These tests establish policy admission and audit API operation, not SOAR containment or Wazuh delivery.
+The matrix passed in CI against Kubernetes 1.33.12 and Gatekeeper 3.23.1. I then repeated the positive and negative server-side dry-run admission checks in the dedicated Phase 4 lab running Kubernetes 1.37.0 and Gatekeeper 3.23.1.
 
-### 2.6 Container image supply chain
+Both constraints reported `enforced: true` across the Gatekeeper pods. Audit snapshots were retrieved for both constraints with valid timestamps and zero violations at the recorded observation. The positive fixture used a syntactically valid placeholder digest and was submitted only through server-side dry-run; it was not deployed or pulled as a workload image.
 
-I replaced the Debian slim base after the first complete Trivy report identified 47 HIGH OS-package findings across 11 CVEs with no fixed Trixie package versions available at scan time. The replacement uses the immutable `python:3.12.16-alpine3.24` base digest. I also upgraded pip to 26.2.0 for dependency installation, then removed pip and its bundled installer from the runtime image.
+These results provide direct evidence of the combined native PSS and Gatekeeper admission behavior in the dedicated Phase 4 lab.
 
-The final image is:
+## 8. Falco rule engineering and declarative delivery
+
+I added a Phase 4 Falco rule source and ConfigMap generator. The write rule retains the existing Aegis rule identity and extends its scope to the Phase 4 response-target workload. The built-in Falco `Terminal shell in container` rule remains the source for Wazuh rule 100502.
+
+The repository also includes declarative Kubernetes resources for:
+
+- The `aegis-unified-policy` and `aegis-soar-system` namespaces.
+- Namespace-scoped SOAR RBAC and ServiceAccount resources.
+- Quarantine NetworkPolicies.
+- The SOAR Deployment and service configuration.
+- Unified Gatekeeper constraints.
+- Falco rule ConfigMap generation.
+
+Falco 0.45.0 accepted the Phase 4 rule during CI validation, and the Falco ConfigMap Kustomize build passed. The Kubernetes Kustomize build also passed. The source-controlled Falco ConfigMap has not yet been reconciled into the live Helm-managed release. That reconciliation must preserve the existing chart configuration and avoid loading a duplicate copy of the Aegis write rule.
+
+The Phase 4 deployed Falco driver mode was not captured. The report therefore records rule validation and declarative delivery, but does not claim that Phase 4 runtime events were proven to be eBPF-backed.
+
+## 9. Container hardening and software supply-chain security
+
+The SOAR image work was a substantial delivery stream in its own right.
+
+### 9.1 Base-image investigation and remediation
+
+The first complete Trivy assessment identified **47 HIGH OS-package findings across 11 CVEs** in the Debian slim base. Fixed Trixie package versions were not available at the time of the assessment. I replaced that base with an immutable `python:3.12.16-alpine3.24` digest and adjusted the build so pip was upgraded for dependency installation, then removed along with its bundled installer from the final runtime image.
+
+The pinned base used for the manifest-approved build was:
+
+```text
+python:3.12.16-alpine3.24@sha256:c5ba3deef00c7758561a0f03c26f44f10589263d40e732b8748e0d1f38f6dd89
+```
+
+### 9.2 Runtime hardening
+
+The published image runs as UID/GID 10001 and is tested with:
+
+- A read-only root filesystem.
+- All Linux capabilities dropped.
+- No-new-privileges enabled.
+- Health and readiness endpoints.
+- Fail-closed readiness when the HMAC secret is absent.
+
+The health endpoint returned HTTP 200 on both architectures. The readiness endpoint returned the expected HTTP 503 when the HMAC secret was not provisioned. This demonstrated that the image did not report itself ready without a required authentication dependency.
+
+### 9.3 Multi-architecture builds and scanning
+
+The image was built and published for `linux/amd64` and `linux/arm64`. Trivy 0.76.2 scanned all severities across vulnerability, misconfiguration and secret categories. The manifest-approved image reports contained zero findings for both architectures.
+
+The approved immutable image digest pinned in the Kubernetes Deployment is:
 
 ```text
 ghcr.io/serra-valle/aegis-soar@sha256:7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc
 ```
 
-The image was published for `linux/amd64` and `linux/arm64`. Both architecture smoke tests ran the service as UID/GID 10001 with a read-only root filesystem, all capabilities dropped and no-new-privileges. The health endpoint returned HTTP 200. Readiness returned the expected HTTP 503 while the HMAC secret was absent, confirming the service remained fail-closed.
+The complete per-architecture reports are retained in [workflow artifact 14351327524](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272).
 
-Trivy 0.76.2 scanned all severities with vulnerability, misconfiguration and secret scanners on both architecture manifests. The final reports contained zero findings on AMD64 and ARM64. The full JSON reports are retained as workflow artifact [14351327524](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272).
+### 9.4 SBOM and signed provenance
 
-The image includes a BuildKit SBOM and a Sigstore-signed provenance attestation. The attestation was uploaded to [GitHub](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68730154), GHCR and the [Rekor transparency log](https://search.sigstore.dev?logIndex=3949778857). The immutable digest is pinned in the Kubernetes Deployment manifest.
+The build generated a BuildKit SBOM and Sigstore-signed provenance. The attestation was published to [GitHub](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68730154), GHCR and the [Rekor transparency log](https://search.sigstore.dev?logIndex=3949778857).
 
-This validates the image artifact only. The Deployment has not been rolled out and no live containment has occurred.
+The consolidated-head pipeline also produced independently verified image builds and attestations. The additional digests were:
 
-### 2.7 Consolidated-head CI revalidation
+| CI run | Image digest | Evidence |
+|---|---|---|
+| 44137127343 | `sha256:6993a33a9e0873f5b7b37a255740e6e7d0dbc7e3286b85725d8ad7fb4c2cc05d` | [Artifact 14352298031](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137127343/artifacts/14352298031), [attestation 68736375](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68736375) |
+| 44142985557 | `sha256:8d4569811f1d44d0aa7b0d797c17960dbd5846e5a0c4a0836e4ad738bcfa5662` | [Artifact 14355492115](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44142985557/artifacts/14355492115), [attestation 68748948](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68748948) |
 
-After consolidating the delivery documentation and improving the ARM64 smoke-test diagnostics, I ran the Phase 4 pipeline again against commit `3c40483b2714c09e74405662f983eecb1e4a596b`.
+These are separate verified rebuilds. The Deployment remains pinned to the earlier manifest-approved digest. The later digests were not silently promoted into the manifest.
 
-[Push run 44137127343](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137127343) passed all three jobs. [PR run 44137140455](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140455) passed both Phase 4 pull-request checks, and [policy regression run 44137140567](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140567) passed both policy-regression jobs.
+## 10. CI/CD, regression and validation record
 
-The consolidated-head push produced an additional multi-architecture image:
+The project uses CI to validate the application, policy, deployment configuration and image supply chain. The checks are intentionally separated so that a successful source test is not confused with a successful image build or live cluster acceptance.
 
-```text
-ghcr.io/serra-valle/aegis-soar@sha256:6993a33a9e0873f5b7b37a255740e6e7d0dbc7e3286b85725d8ad7fb4c2cc05d
-```
+### 10.1 Consolidated code validation
 
-Both architecture smoke tests passed with the service running as UID/GID 10001, a read-only root filesystem, all capabilities dropped and no-new-privileges. Trivy 0.76.2 reported zero vulnerability, misconfiguration and secret findings on AMD64 and ARM64. The full reports are retained as [artifact 14352298031](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137127343/artifacts/14352298031). Signed provenance was uploaded to [GitHub](https://github.com/serra-valle/Cybersecurity-portfolio/attestations/68736375), GHCR and [Rekor](https://search.sigstore.dev?logIndex=3950054994).
-
-The first consolidated push attempt, [run 44136227347](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44136227347), did not pass because the ARM64 health endpoint failed to respond within the original 30-second smoke-test window. That run stopped before Trivy scanning and provenance attestation. I increased the startup deadline to 120 seconds and added container state, exit-code, log and health-response capture for future failures. The subsequent run passed on both architectures. This is consistent with startup-time sensitivity under emulation; I did not treat the first timeout as proof of an application defect.
-
-The Deployment manifest remains pinned to the earlier verified image digest `sha256:7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc` from run 44134158272. The new digest is independently verified but has not been promoted into the manifest. Neither image has been deployed.
-
-## 3. Automated validation results
-
-[GitHub Actions run 44137127343](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137127343) passed all three jobs on consolidated commit `3c40483b2714c09e74405662f983eecb1e4a596b`. The Phase 4 [PR run 44137140455](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140455) and [policy regression run 44137140567](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140567) also passed. The earlier [run 43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989) remains the original source and policy baseline, while run 44134158272 validates the image digest currently pinned in the Deployment manifest.
+The latest consolidated source validation, [run 44142985557](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44142985557), passed:
 
 | Validation | Result |
 |---|---|
-| SOAR application unit tests | 16 passed in code validation run 44142985557 |
-| Gatekeeper exporter unit tests | 12 passed in code validation run 44142985557 and local regression run |
+| SOAR application unit tests | 16 passed |
+| Gatekeeper exporter unit tests | 12 passed |
 | Python compilation of application, collector and Active Response scripts | Passed |
 | Wazuh XML configuration parsing | Passed |
-| OPA 0.62.1 regression | 10/10 passed |
+| OPA 0.62.1 regression suite | 10/10 passed |
 | Falco 0.45.0 rule validation | Passed |
 | Kubernetes Kustomize build | Passed |
 | Falco ConfigMap Kustomize build | Passed |
-| Kubernetes 1.33.12 and Gatekeeper 3.23.1 admission matrix | All four expected outcomes passed |
-| Multi-architecture image build | AMD64 and ARM64 published |
-| Hardened runtime smoke tests | Both architectures passed under non-root, read-only-root, no-capability and no-new-privileges settings |
-| Trivy 0.76.2 full scan | Zero vulnerability, misconfiguration and secret findings on both architectures |
-| SBOM and provenance | BuildKit SBOM attached; Sigstore-signed provenance uploaded to GitHub, GHCR and Rekor |
+| Disposable Kubernetes 1.33.12 / Gatekeeper 3.23.1 admission matrix | All four expected outcomes passed |
 
-The consolidated-head run validates the current application, policy, manifests and image pipeline at commit `3c40483b2714c09e74405662f983eecb1e4a596b`. The additional image digest from that run is independently verified, while the Deployment manifest continues to pin the previously verified digest `7cfb86923d5110aeec3241641fee94eef9324a7bfeaaa751d50fb6f4f856f0dc`. These CI results do not constitute a live Phase 4 deployment or runtime network-isolation test.
+The associated [PR validation run 44143002713](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44143002713) and [policy regression run 44143002456](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44143002456) were also recorded as passing in the delivery status.
 
-## 4. Items still required for live acceptance
+### 10.2 Image and consolidated-head pipeline history
 
-I have not marked Phase 4 as operationally complete. The remaining acceptance gaps are:
+| Run | Purpose and outcome |
+|---|---|
+| [43828411989](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/43828411989) | Historical source and policy baseline; Python, OPA, Falco, Kustomize and admission checks passed |
+| [44134158272](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44134158272) | Manifest-pinned AMD64/ARM64 image build, hardened runtime smoke tests, zero-finding Trivy reports, SBOM and signed provenance |
+| [44136227347](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44136227347) | Initial consolidated image attempt exposed an ARM64 startup-timeout issue in the 30-second smoke-test window |
+| [44137127343](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137127343) | Consolidated-head push pipeline passed; multi-architecture smoke tests, zero-finding scans and signed provenance |
+| [44137140455](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140455) | Phase 4 pull-request validation passed |
+| [44137140567](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44137140567) | Policy regression passed |
+| [44138533504](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44138533504) | Subsequent consolidated-head image validation passed; reports retained as artifact 14353566620 and attestation 68739365 |
+| [44142985557](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44142985557) | Latest consolidated source validation and multi-architecture image pipeline; 16 SOAR tests, 12 exporter tests and 10/10 OPA tests passed |
+| [44143002713](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44143002713) | Phase 4 PR validation |
+| [44143002456](https://github.com/serra-valle/Cybersecurity-portfolio/actions/runs/44143002456) | Policy regression |
 
-1. Complete exporter freshness hardening and deploy the collector with a dedicated, renewable read-only Kubernetes identity. The current exporter tests pass, but the systemd service is not deployed.
-2. Provision the HMAC secret securely in Kubernetes and on a restored Wazuh Manager. Keep it outside Git.
-3. Restore Wazuh Manager infrastructure. The previous AWS-hosted Manager is unavailable because the AWS account is closed; therefore Active Response, dispatcher delivery, Gatekeeper JSONL ingestion and rules 100503/100504 cannot currently be exercised.
-4. Deploy the SOAR workload only after its secret and runtime prerequisites are available.
-5. Prove Calico ingress and egress isolation, Service selector eligibility and EndpointSlice removal.
-6. Reconcile the Falco ConfigMap into the live Helm release, avoid duplicate rules, and capture the actual Falco driver mode.
-7. Execute controlled SOAR containment and capture genuine end-to-end evidence.
+The first consolidated image attempt failed because the ARM64 health endpoint did not respond within the original 30-second startup window. I increased the startup deadline to 120 seconds and added container-state, exit-code, log and health-response diagnostics. The subsequent consolidated build passed. The earlier timeout was treated as an environment/startup sensitivity under emulation, not as a confirmed application defect.
 
-The SOAR dataplane-attestation setting must remain false until the ingress, egress and EndpointSlice checks are complete.
+### 10.3 Validation boundaries
 
-## 5. Submission status
+The evidence in this report falls into four categories:
+
+- **Source and unit validation:** application, exporter, policy and configuration behavior tested in CI.
+- **Artifact validation:** multi-architecture image builds, hardened runtime smoke tests, vulnerability scanning, SBOM and provenance.
+- **Kubernetes lab validation:** Gatekeeper installation, constraint enforcement, server-side dry-run admission decisions and audit snapshot retrieval.
+- **Operational integration:** live Wazuh event ingestion, deployed exporter service, SOAR rollout and genuine containment. These require restored Wazuh infrastructure and the remaining runtime acceptance procedures.
+
+This separation preserves the value of each completed test while keeping the final operational claims accurate.
+
+## 11. Engineering challenges, decisions and improvements
+
+Several engineering decisions materially improved the security and reliability of the delivery.
+
+| Area | Engineering challenge | Decision or improvement |
+|---|---|---|
+| Response safety | A quarantine label alone does not prove network isolation | Require a named deny-all policy, correct selector and both ingress/egress policy types; keep dataplane attestation false until tested |
+| Kubernetes controllers | Deleting a controller-owned Pod can cause an unquarantined replacement | Preserve controller-managed Pods and limit immediate deletion to eligible unmanaged targets |
+| Service routing | A quarantined Pod may remain eligible for Service traffic | Add a separate endpoint-eligibility label and explicit Service selector contract |
+| Alert delivery | A transient tunnel or webhook failure can lose a synchronous event | Add durable local spooling, a separate retrying dispatcher and signed requests |
+| Audit state | A partial Gatekeeper snapshot can make active findings appear resolved | Validate audit timestamps and violation totals; detect truncation; preserve state and avoid false resolution |
+| Checkpoint integrity | A process restart or corrupted state can cause replay or incorrect transitions | Use atomic state replacement, filesystem synchronization, restrictive permissions and explicit failure handling |
+| Container vulnerabilities | Initial Debian slim image exposed 47 HIGH package findings | Move to an immutable Alpine base digest, update build dependencies and remove pip from the final runtime |
+| ARM64 smoke testing | Emulated startup exceeded the initial 30-second deadline | Increase the deadline to 120 seconds and capture diagnostics on failure |
+| Policy scope | Phase 4 needed unified controls without disrupting earlier work | Reuse canonical Phase 2 templates and scope the new constraints to the dedicated unified namespace |
+| Evidence quality | CI success can be mistaken for live deployment | Separate source, artifact, lab and operational acceptance evidence throughout the report |
+
+The dedicated Phase 4 lab also required CNI installation recovery before policy testing could proceed. That investigation and recovery enabled the subsequent Gatekeeper and admission work in the dedicated environment.
+
+## 12. Delivery artifacts
+
+The Phase 4 branch contains the implementation and supporting material for the workstreams described above, including:
+
+- FastAPI SOAR application and application tests.
+- Wazuh Active Response and dispatcher scripts.
+- Wazuh configuration fragments and custom Gatekeeper rules 100503/100504.
+- Gatekeeper audit exporter, dependencies and tests.
+- Kubernetes namespaces, RBAC, ServiceAccount, NetworkPolicies, Deployment and service resources.
+- Unified Gatekeeper constraint resources reusing the established Phase 2 templates.
+- Falco Phase 4 rule source and ConfigMap generator.
+- CI workflows for application, policy, admission and image validation.
+- Deployment runbook, acceptance matrix, delivery status and image security evidence.
+
+The supporting documents are maintained alongside the implementation so that another engineer can understand the architecture, reproduce the checks and continue the deployment without relying on undocumented assumptions.
+
+## 13. Operational integration and next stage
+
+The engineering package, automated validation and dedicated-lab policy checks are in place. The next stage connects these components to operational infrastructure and completes the remaining runtime acceptance.
+
+The AWS-hosted Wazuh Manager is unavailable because the AWS account is closed. The Active Response scripts, dispatcher, Gatekeeper rules and agent collection configuration therefore have not been installed and exercised against that Manager. The Gatekeeper exporter has passed its test suite and live audit snapshots have been retrieved, but its service and Wazuh JSONL ingestion still need deployment.
+
+The dedicated Phase 4 lab has Calico installed and Gatekeeper admission enforcement verified. A controlled ingress/egress baseline and quarantine test is still required to demonstrate dataplane isolation and EndpointSlice removal. The SOAR Deployment has not been rolled out, and no genuine end-to-end containment event or containment log is claimed. The Falco rule passes syntax validation and its ConfigMap builds, while reconciliation into the live Helm release and capture of the Phase 4 driver mode remain deployment tasks.
+
+For safety, `AEGIS_NETWORK_POLICY_ENFORCEMENT_CONFIRMED=false` must remain in place until the live network-isolation and EndpointSlice checks pass. Destructive response must remain disabled until its corresponding safeguards and live acceptance tests are complete.
+
+These are integration and operational acceptance tasks for the next stage. They do not negate the completed application engineering, automated test coverage, image security work, supply-chain attestations or live Gatekeeper policy enforcement already documented in this report.
+
+## 14. Submission and repository status
 
 I opened [draft PR #2](https://github.com/serra-valle/Cybersecurity-portfolio/pull/2) against the Phase 3 branch. It is intentionally stacked on [Phase 3 PR #1](https://github.com/serra-valle/Cybersecurity-portfolio/pull/1), so Phase 3 should be merged first. Phase 4 can then be retargeted to `main`.
 
-The assigned target date was 13 November 2026. This report is dated 17 November 2026 and does not backdate implementation, deployment or acceptance.
+The assigned target date was 13 November 2026. This report is dated 17 November 2026 and records the work and validation evidence available at that point. It does not backdate implementation, deployment or acceptance.
 
-**Current conclusion:** the Phase 4 source package, CI admission suite, immutable SOAR image supply chain, Gatekeeper installation, unified constraint enforcement and Gatekeeper audit snapshot retrieval are validated. The SOAR Deployment, exporter service, Wazuh integration, Calico dataplane isolation and end-to-end containment remain unverified. The AWS account closure prevents access to the previous Wazuh Manager. This is a partially accepted engineering delivery, not a claim of completed operational SOAR.
+## 15. Final assessment
+
+Phase 4 delivered a substantial security engineering package across Kubernetes response automation, Wazuh integration design, Gatekeeper audit telemetry, policy-as-code, Falco configuration, container security and software supply-chain assurance.
+
+The strongest verified outcomes are:
+
+- A hardened SOAR application with authenticated requests, strict input controls, Kubernetes RBAC integration and guarded response logic.
+- Durable Wazuh alert handling and a private delivery architecture.
+- A Gatekeeper audit exporter with persistent checkpoints, replay protection, truncation handling and active/resolved event tracking.
+- A dedicated Kubernetes lab with Calico and Gatekeeper installed, unified PSS and Aegis constraints applied, and positive and negative admission outcomes verified.
+- A multi-architecture SOAR image with hardened runtime settings, zero findings in the manifest-approved Trivy reports, an SBOM and signed provenance.
+- Repeatable CI validation covering application tests, exporter tests, OPA, Falco, Wazuh XML, Kustomize, admission behavior and image supply-chain checks.
+
+The work has moved Aegis beyond policy authoring into a connected security engineering design with tested application components, repeatable controls, a verified image supply chain and live policy admission evidence. The remaining stage is to restore the external Wazuh dependency, deploy the integration services and capture the controlled end-to-end containment evidence.
+
+**Overall assessment:** substantial Phase 4 engineering delivery with strong automated validation, verified container supply-chain controls and live Gatekeeper policy enforcement in the dedicated lab. Operational SOAR acceptance is the next integration stage.
